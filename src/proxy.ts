@@ -1,83 +1,84 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+/**
+ * Proxy Middleware untuk Next.js 16 (Netlify Compatible)
+ */
 export async function middleware(request: NextRequest) {
-  // If Supabase env vars are not set, let the request through (shows config error page)
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL === 'your_supabase_project_url') {
-    return NextResponse.next({ request })
-  }
+  const { pathname } = request.nextUrl
 
+  // Response awal
   let supabaseResponse = NextResponse.next({
     request,
   })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+  // Pastikan variabel lingkungan ada
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your_supabase_project_url') {
+    return supabaseResponse
+  }
+
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
-    }
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        )
+        supabaseResponse = NextResponse.next({
+          request,
+        })
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        )
+      },
+    },
+  })
+
+  // Ambil user (menyegarkan sesi jika perlu)
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 1. Tangani halaman root (/)
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL(user ? '/dashboard' : '/login', request.url))
+  }
+
+  // 2. Tentukan kategori rute
+  const isProtectedRoute = ['/dashboard', '/pangkalan', '/distribusi', '/monitoring'].some(path => 
+    pathname.startsWith(path)
+  )
+  const isAuthRoute = ['/login', '/register', '/konfirmasi-email'].some(path => 
+    pathname.startsWith(path)
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { pathname } = request.nextUrl
-
-  // 1. Tangani halaman root (/) agar tidak konflik
-  if (pathname === '/') {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = user ? '/dashboard' : '/login'
-    return NextResponse.redirect(redirectUrl)
+  // 3. Logika Pengalihan
+  if (!user && isProtectedRoute) {
+    // Belum login & akses halaman rahasia -> Tendang ke Login
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Protected routes
-  const protectedRoutes = ['/dashboard', '/pangkalan', '/distribusi', '/monitoring']
-  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
-
-  // Auth routes (accessible only when NOT logged in)
-  const authRoutes = ['/login', '/register', '/konfirmasi-email']
-  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
-
-  // Jika belum login dan mencoba akses halaman terproteksi -> Lari ke Login
-  if (!user && isProtected) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/login'
-    // Simpan halaman asal jika perlu (optional: redirectUrl.searchParams.set('next', pathname))
-    return NextResponse.redirect(redirectUrl)
-  }
-
-  // Jika sudah login tapi mencoba akses halaman login/register -> Lari ke Dashboard
   if (user && isAuthRoute) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/dashboard'
-    return NextResponse.redirect(redirectUrl)
+    // Sudah login & akses halaman login/regis -> Lempar ke Dashboard
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse
 }
 
-export default middleware;
+export default middleware
 
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
