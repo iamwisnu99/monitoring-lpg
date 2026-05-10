@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Preview — Email Template</title>
+  <style>
+    body { background: #cbd5e1; margin: 0; padding: 32px 16px; font-family: sans-serif; }
+    h2 { text-align:center; color:#334155; margin-bottom:8px; font-size:14px; text-transform:uppercase; letter-spacing:1px; }
+    .device-row { display:flex; gap:32px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
+    .device { text-align:center; }
+    .label { font-size:12px; color:#64748b; margin-bottom:8px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+    iframe { border:none; box-shadow:0 8px 32px rgba(0,0,0,0.18); }
+    .desktop-frame { border-radius:12px; }
+    .mobile-frame { border-radius:28px; border:6px solid #1e293b; }
+  </style>
+</head>
+<body>
+  <h2>Preview Email Template — Konfirmasi Pendaftaran</h2>
+  <br/>
+  <div class="device-row">
+    <div class="device">
+      <div class="label">🖥 Desktop</div>
+      <iframe src="konfirmasi-email.html" width="640" height="720" class="desktop-frame"></iframe>
+    </div>
+    <div class="device">
+      <div class="label">📱 Mobile</div>
+      <iframe src="konfirmasi-email.html" width="390" height="720" class="mobile-frame"></iframe>
+    </div>
+  </div>
+</body>
+</html>

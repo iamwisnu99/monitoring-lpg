@@ -1,0 +1,74 @@
+# Netlify Configuration
+# Monitoring Distribusi LPG 3Kg — Next.js 16 on Netlify
+
+[build]
+  command   = "npm run build"
+  publish   = ".next"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS    = "--legacy-peer-deps"
+
+# Next.js runtime plugin — wajib untuk SSR + API Routes + Auth
+# Plugin ini menangani semua routing secara otomatis, tidak perlu redirect manual
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Hapus trailing slash (SEO best practice)
+[[redirects]]
+  from   = "/dashboard/"
+  to     = "/dashboard"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/pangkalan/"
+  to     = "/pangkalan"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/distribusi/"
+  to     = "/distribusi"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/monitoring/"
+  to     = "/monitoring"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/login/"
+  to     = "/login"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/register/"
+  to     = "/register"
+  status = 301
+  force  = true
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options             = "SAMEORIGIN"
+    X-Content-Type-Options      = "nosniff"
+    X-XSS-Protection            = "1; mode=block"
+    Referrer-Policy             = "strict-origin-when-cross-origin"
+    Permissions-Policy          = "camera=(), microphone=(), geolocation=()"
+    Strict-Transport-Security   = "max-age=31536000; includeSubDomains; preload"
+
+# Cache headers untuk static assets
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/favicon.ico"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

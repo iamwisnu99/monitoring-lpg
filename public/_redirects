@@ -1,0 +1,12 @@
+# _redirects — backup fallback untuk Pretty URLs di Netlify
+# File ini digunakan sebagai fallback jika netlify.toml tidak cukup.
+# @netlify/plugin-nextjs sudah menangani routing SSR secara otomatis,
+# tapi rules ini memastikan redirect trailing slash tetap aktif.
+
+# Hapus trailing slash (301 permanent)
+/dashboard/     /dashboard    301!
+/pangkalan/     /pangkalan    301!
+/distribusi/    /distribusi   301!
+/monitoring/    /monitoring   301!
+/login/         /login        301!
+/register/      /register     301!

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="id" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <title>Konfirmasi Email — Monitoring LPG 3Kg</title>
+
+  <!--
+  =======================================================
+  TEMPLATE EMAIL — Monitoring Distribusi LPG 3Kg
+  Platform: Supabase Auth (Confirm Signup)
+  =======================================================
+  CARA PAKAI:
+  1. Buka Supabase Dashboard → Authentication → Email Templates
+  2. Pilih "Confirm signup"
+  3. Copy SELURUH isi file ini ke kolom "Body"
+  4. Ganti variabel berikut jika perlu:
+     - {{ .ConfirmationURL }} → sudah otomatis dari Supabase
+  5. Klik Save
+  =======================================================
+  -->
+
+  <style type="text/css">
+    /* ─── Reset ─── */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+    a { text-decoration: none; }
+
+    /* ─── Base ─── */
+    body {
+      background-color: #f4f6f8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #1e293b;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ─── Wrapper ─── */
+    .wrapper {
+      width: 100%;
+      background-color: #f4f6f8;
+      padding: 48px 16px;
+    }
+
+    /* ─── Container Desktop ─── */
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
+    }
+
+    /* ─── Header ─── */
+    .header {
+      background: linear-gradient(135deg, #007a38 0%, #009345 60%, #00a84f 100%);
+      padding: 40px 48px 36px;
+      text-align: center;
+    }
+    .header-logo-wrap {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 10px 20px;
+      margin-bottom: 18px;
+    }
+    .header-logo-text {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+    }
+    .header-logo-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .header-icon {
+      width: 56px;
+      height: 56px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+    .header-subtitle {
+      font-size: 14px;
+      color: rgba(255,255,255,0.8);
+    }
+
+    /* ─── Body ─── */
+    .body {
+      padding: 40px 48px;
+    }
+    .greeting {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 10px;
+    }
+    .text {
+      font-size: 15px;
+      color: #475569;
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    /* ─── CTA Button ─── */
+    .btn-wrap {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #007a38, #009345);
+      color: #ffffff !important;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 40px;
+      border-radius: 10px;
+      text-decoration: none !important;
+      letter-spacing: 0.2px;
+      box-shadow: 0 4px 12px rgba(0, 147, 69, 0.35);
+    }
+    .btn:hover { opacity: 0.92; }
+
+    /* ─── Divider ─── */
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 28px 0;
+    }
+
+    /* ─── Info box ─── */
+    .info-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+    }
+    .info-box-text {
+      font-size: 13px;
+      color: #166534;
+      line-height: 1.6;
+    }
+
+    /* ─── URL fallback ─── */
+    .url-box {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      word-break: break-all;
+      font-size: 12px;
+      color: #64748b;
+      font-family: 'Courier New', Courier, monospace;
+      margin-top: 8px;
+    }
+
+    /* ─── Footer ─── */
+    .footer {
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      padding: 24px 48px;
+      text-align: center;
+    }
+    .footer-text {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .footer-brand {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    /* ─── Warning text ─── */
+    .warning {
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    /* ====================================================
+       RESPONSIVE — Mobile (max-width: 480px)
+    ==================================================== */
+    @media only screen and (max-width: 480px) {
+      .wrapper {
+        padding: 0 !important;
+      }
+      .container {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        min-height: 100vh;
+      }
+      .header {
+        padding: 32px 24px 28px !important;
+      }
+      .header-title {
+        font-size: 19px !important;
+      }
+      .body {
+        padding: 28px 24px !important;
+      }
+      .footer {
+        padding: 20px 24px !important;
+      }
+      .btn {
+        display: block !important;
+        padding: 14px 24px !important;
+        font-size: 15px !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrapper">
+    <div class="container">
+
+      <!-- ═══ HEADER ═══ -->
+      <div class="header">
+        <!-- Brand badge -->
+        <div class="header-logo-wrap">
+          <div class="header-logo-text">🔥 Monitoring LPG</div>
+          <div class="header-logo-sub">Pertamina · Distribusi 3Kg</div>
+        </div>
+
+        <!-- Icon -->
+        <div style="text-align:center; margin-bottom:12px;">
+          <div style="
+            width:56px; height:56px;
+            background:rgba(255,255,255,0.18);
+            border-radius:50%;
+            display:inline-flex; align-items:center; justify-content:center;
+            font-size:26px; line-height:1;
+          ">✉️</div>
+        </div>
+
+        <div class="header-title">Konfirmasi Email Anda</div>
+        <div class="header-subtitle">Satu langkah lagi untuk memulai</div>
+      </div>
+
+      <!-- ═══ BODY ═══ -->
+      <div class="body">
+
+        <p class="greeting">Halo,</p>
+        <p class="text">
+          Terima kasih telah mendaftar di <strong>Sistem Monitoring Distribusi LPG 3Kg</strong>.
+          Kami perlu memverifikasi alamat email Anda sebelum akun dapat digunakan.
+        </p>
+
+        <!-- Info box -->
+        <div class="info-box">
+          <p class="info-box-text">
+            ✅ Klik tombol di bawah untuk mengonfirmasi email Anda.
+            Link berlaku selama <strong>24 jam</strong> sejak email ini dikirim.
+          </p>
+        </div>
+
+        <!-- CTA Button -->
+        <div class="btn-wrap">
+          <a href="{{ .ConfirmationURL }}" class="btn" target="_blank">
+            Konfirmasi Email Saya
+          </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Fallback URL -->
+        <p class="text" style="font-size:13px; color:#64748b;">
+          Jika tombol di atas tidak berfungsi, salin dan tempel URL berikut ke browser Anda:
+        </p>
+        <div class="url-box">{{ .ConfirmationURL }}</div>
+
+        <p class="warning" style="margin-top:20px;">
+          Jika Anda tidak merasa membuat akun ini, abaikan email ini.<br/>
+          Akun tidak akan aktif tanpa konfirmasi.
+        </p>
+      </div>
+
+      <!-- ═══ FOOTER ═══ -->
+      <div class="footer">
+        <p class="footer-brand">Monitoring Distribusi LPG 3Kg</p>
+        <p class="footer-text">
+          Email ini dikirim secara otomatis, mohon tidak membalas email ini.<br/>
+          © {{ now | date "2006" }} Pertamina · Sistem Monitoring Agen LPG
+        </p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
