@@ -4,9 +4,9 @@
 # tapi rules ini memastikan redirect trailing slash tetap aktif.
 
 # Hapus trailing slash (301 permanent)
-/dashboard/     /dashboard    301!
-/pangkalan/     /pangkalan    301!
-/distribusi/    /distribusi   301!
-/monitoring/    /monitoring   301!
-/login/         /login        301!
-/register/      /register     301!
+/dashboard/     /dashboard    200
+/pangkalan/     /pangkalan    200
+/distribusi/    /distribusi   200
+/monitoring/    /monitoring   200
+/login/         /login        200
+/register/      /register     200
