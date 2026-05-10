@@ -41,6 +41,13 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // 1. Tangani halaman root (/) agar tidak konflik
+  if (pathname === '/') {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = user ? '/dashboard' : '/login'
+    return NextResponse.redirect(redirectUrl)
+  }
+
   // Protected routes
   const protectedRoutes = ['/dashboard', '/pangkalan', '/distribusi', '/monitoring']
   const isProtected = protectedRoutes.some((route) => pathname.startsWith(route))
@@ -49,12 +56,15 @@ export async function middleware(request: NextRequest) {
   const authRoutes = ['/login', '/register', '/konfirmasi-email']
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
 
+  // Jika belum login dan mencoba akses halaman terproteksi -> Lari ke Login
   if (!user && isProtected) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/login'
+    // Simpan halaman asal jika perlu (optional: redirectUrl.searchParams.set('next', pathname))
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Jika sudah login tapi mencoba akses halaman login/register -> Lari ke Dashboard
   if (user && isAuthRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/dashboard'
