@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
 
   // 1. Tangani halaman root (/)
   if (pathname === '/') {
-    return NextResponse.redirect(new URL(user ? '/dashboard' : '/login', request.url))
+    return NextResponse.redirect(new URL(user ? '/dashboard' : '/login', request.url), { status: 302 })
   }
 
   // 2. Tentukan kategori rute
@@ -58,12 +58,12 @@ export async function middleware(request: NextRequest) {
   // 3. Logika Pengalihan
   if (!user && isProtectedRoute) {
     // Belum login & akses halaman rahasia -> Tendang ke Login
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/login', request.url), { status: 302 })
   }
 
   if (user && isAuthRoute) {
     // Sudah login & akses halaman login/regis -> Lempar ke Dashboard
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url), { status: 302 })
   }
 
   return supabaseResponse

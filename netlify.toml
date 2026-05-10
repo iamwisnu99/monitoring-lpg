@@ -14,43 +14,6 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Hapus trailing slash (SEO best practice)
-[[redirects]]
-  from   = "/dashboard/"
-  to     = "/dashboard"
-  status = 301
-  force  = true
-
-[[redirects]]
-  from   = "/pangkalan/"
-  to     = "/pangkalan"
-  status = 301
-  force  = true
-
-[[redirects]]
-  from   = "/distribusi/"
-  to     = "/distribusi"
-  status = 301
-  force  = true
-
-[[redirects]]
-  from   = "/monitoring/"
-  to     = "/monitoring"
-  status = 301
-  force  = true
-
-[[redirects]]
-  from   = "/login/"
-  to     = "/login"
-  status = 301
-  force  = true
-
-[[redirects]]
-  from   = "/register/"
-  to     = "/register"
-  status = 301
-  force  = true
-
 # Security headers
 [[headers]]
   for = "/*"
