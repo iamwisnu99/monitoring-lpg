@@ -36,24 +36,42 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
   const groupId = pangkalan.parent_id ? pangkalan.parent_id : pangkalan.id
 
   // 2. Ambil data grup dan distribusi secara PARALEL (1 round-trip untuk keduanya)
-  const [groupRes, distRes] = await Promise.all([
+  const [groupRes, distResInitial] = await Promise.all([
     supabase
       .from('pangkalan')
       .select('id, nama_pangkalan, penanggung_jawab')
       .or(`id.eq.${groupId},parent_id.eq.${groupId}`),
+    // Ambil distribusi untuk ID ini dulu sebagai fallback cepat
     supabase
       .from('distribusi')
       .select('*, pangkalan(nama_pangkalan), warung_tujuan(id, nama_warung)', { count: 'exact' })
-      // Kita gunakan filter yang mencakup pangkalan utama dan semua cabangnya
-      .or(`pangkalan_id.eq.${groupId},pangkalan.parent_id.eq.${groupId}` as any)
+      .eq('pangkalan_id', id)
       .order('created_at', { ascending: false })
       .range(offset, offset + PER_PAGE - 1)
   ])
 
   const groupPangkalans = groupRes.data || []
+  const groupIds = groupPangkalans.map(p => p.id)
+  
+  // Jika ini bagian dari grup, kita ambil data distribusi untuk SELURUH GRUP
+  let distribusiList = distResInitial.data || []
+  let totalDistribusi = distResInitial.count ?? 0
+
+  if (groupIds.length > 1) {
+    const { data: groupDist, count: groupCount } = await supabase
+      .from('distribusi')
+      .select('*, pangkalan(nama_pangkalan), warung_tujuan(id, nama_warung)', { count: 'exact' })
+      .in('pangkalan_id', groupIds)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PER_PAGE - 1)
+    
+    if (groupDist) {
+      distribusiList = groupDist
+      totalDistribusi = groupCount ?? 0
+    }
+  }
+
   const subPangkalans = groupPangkalans.filter(p => p.id !== pangkalan.id)
-  const distribusiList = distRes.data || []
-  const totalDistribusi = distRes.count ?? 0
   const totalPages = Math.ceil(totalDistribusi / PER_PAGE)
 
   return (
