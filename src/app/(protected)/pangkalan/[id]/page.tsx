@@ -24,9 +24,21 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data: pangkalan } = await supabase
-    .from('pangkalan').select('*').eq('id', id).eq('user_id', user!.id).single()
+    .from('pangkalan')
+    .select('*, parent:parent_id(id, nama_pangkalan)')
+    .eq('id', id)
+    .eq('user_id', user!.id)
+    .single()
 
   if (!pangkalan) notFound()
+
+  // Ambil daftar pangkalan lain (sub-pangkalan) jika pangkalan ini adalah pangkalan utama
+  // Atau ambil pangkalan "saudara" jika ini adalah sub-pangkalan
+  const { data: subPangkalans } = await supabase
+    .from('pangkalan')
+    .select('id, nama_pangkalan, penanggung_jawab')
+    .eq('parent_id', pangkalan.parent_id ? pangkalan.parent_id : pangkalan.id)
+    .neq('id', pangkalan.id) // Jangan tampilkan diri sendiri
 
   // Ambil total count dan data dengan warung names
   const { data: distribusiList, count: totalCount } = await supabase
@@ -137,8 +149,53 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
                   </div>
                 </div>
               )}
+
+              {pangkalan.parent && (
+                <div className="flex items-center gap-3 px-5 py-3.5 bg-green-50/50">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: '#fff' }}>
+                    <ArrowLeft className="w-4 h-4 text-green-600 rotate-90" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400">Pangkalan Utama</p>
+                    <Link href={`/pangkalan/${(pangkalan.parent as any).id}`} className="text-sm font-bold text-green-700 hover:underline">
+                      {(pangkalan.parent as any).nama_pangkalan}
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* ─── Pangkalan Lain (Sub-Pangkalan) ─── */}
+          {subPangkalans && subPangkalans.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-100">
+              <div className="px-5 py-3 border-b border-slate-50 bg-slate-50/50">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  {pangkalan.parent_id ? 'Pangkalan Lain' : 'Cabang / Pangkalan Lain'}
+                </h3>
+              </div>
+              <div className="divide-y divide-slate-50">
+                {subPangkalans.map((sub) => (
+                  <Link 
+                    key={sub.id} 
+                    href={`/pangkalan/${sub.id}`}
+                    className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-green-100 group-hover:text-green-600 transition-colors">
+                        <Warehouse className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700 group-hover:text-green-700">{sub.nama_pangkalan}</p>
+                        <p className="text-[10px] text-slate-400">{sub.penanggung_jawab}</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Link href={`/pangkalan/${id}/distribusi/tambah`}
             className="lg:hidden flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"

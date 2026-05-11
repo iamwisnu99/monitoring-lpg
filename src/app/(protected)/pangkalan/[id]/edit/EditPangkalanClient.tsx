@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Warehouse, Save, Loader2, AlertCircle, User, Phone } from 'lucide-react'
+import { ArrowLeft, Warehouse, Save, Loader2, AlertCircle, User, Phone, ChevronRight } from 'lucide-react'
 
 interface Props {
   pangkalan: {
@@ -12,6 +12,7 @@ interface Props {
     nama_pangkalan: string
     penanggung_jawab: string
     nomor_telepon: string | null
+    parent_id: string | null
   }
 }
 
@@ -20,8 +21,32 @@ export default function EditPangkalanClient({ pangkalan }: Props) {
   const [nama, setNama] = useState(pangkalan.nama_pangkalan)
   const [penanggungJawab, setPenanggungJawab] = useState(pangkalan.penanggung_jawab)
   const [nomorTelepon, setNomorTelepon] = useState(pangkalan.nomor_telepon || '')
+  const [parentId, setParentId] = useState<string | null>(pangkalan.parent_id)
+  const [parentList, setParentList] = useState<{ id: string, nama_pangkalan: string }[]>([])
   const [loading, setLoading] = useState(false)
+  const [fetchingParents, setFetchingParents] = useState(true)
   const [error, setError] = useState('')
+
+  // Ambil daftar pangkalan utama untuk pilihan
+  useState(() => {
+    const fetchParents = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data } = await supabase
+        .from('pangkalan')
+        .select('id, nama_pangkalan')
+        .eq('user_id', user.id)
+        .is('parent_id', null)
+        .neq('id', pangkalan.id) // Jangan pilih diri sendiri sebagai parent
+        .order('nama_pangkalan')
+
+      if (data) setParentList(data)
+      setFetchingParents(false)
+    }
+    fetchParents()
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -116,6 +141,34 @@ export default function EditPangkalanClient({ pangkalan }: Props) {
                 onFocus={e => e.currentTarget.style.borderColor = '#009345'}
                 onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'} />
             </div>
+          </div>
+
+          <div>
+            <label htmlFor="parent_id" className="block text-sm font-medium text-slate-700 mb-1.5">
+              Hubungkan ke Pangkalan Utama (Opsional)
+            </label>
+            <div className="relative">
+              <Warehouse className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+              <select
+                id="parent_id"
+                value={parentId || ''}
+                onChange={(e) => setParentId(e.target.value || null)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-slate-200 text-slate-800 text-sm outline-none transition-all bg-white appearance-none"
+                onFocus={e => e.currentTarget.style.borderColor = '#009345'}
+                onBlur={e => e.currentTarget.style.borderColor = '#e2e8f0'}
+              >
+                <option value="">-- Berdiri Sendiri (Pangkalan Utama) --</option>
+                {parentList.map(p => (
+                  <option key={p.id} value={p.id}>{p.nama_pangkalan}</option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronRight className="w-4 h-4 text-slate-300 rotate-90" />
+              </div>
+            </div>
+            <p className="mt-1.5 text-[10px] text-slate-400">
+              Ubah pangkalan utama jika pangkalan ini merupakan cabang atau bagian dari grup pangkalan lain.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-2">

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://monitoring-lpg.netlify.app";
 const APP_NAME = "Monitoring Distribusi LPG 3Kg";
@@ -102,8 +103,8 @@ export const metadata: Metadata = {
 // Viewport terpisah dari metadata (Next.js 14+)
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#1e40af" },
-    { media: "(prefers-color-scheme: dark)", color: "#1e3a8a" },
+    { media: "(prefers-color-scheme: light)", color: "#009345" },
+    { media: "(prefers-color-scheme: dark)", color: "#007a38" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -124,11 +125,22 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className="antialiased">
         {children}
+        <PWAInstallPrompt />
       </body>
     </html>
   );
 }
-

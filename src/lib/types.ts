@@ -9,6 +9,7 @@ export type Database = {
           nomor_telepon: string | null
           user_id: string
           nama_agen: string
+          parent_id: string | null
           created_at: string
         }
         Insert: {
@@ -18,6 +19,7 @@ export type Database = {
           nomor_telepon?: string | null
           user_id: string
           nama_agen?: string
+          parent_id?: string | null
           created_at?: string
         }
         Update: {
@@ -27,6 +29,7 @@ export type Database = {
           nomor_telepon?: string | null
           user_id?: string
           nama_agen?: string
+          parent_id?: string | null
           created_at?: string
         }
       }

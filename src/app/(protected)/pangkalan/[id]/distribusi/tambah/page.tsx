@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,7 +8,6 @@ import {
   ArrowLeft, Truck, Plus, Trash2, Save, Loader2, AlertCircle,
   Store, User, CreditCard, MapPin,
 } from 'lucide-react'
-import { use } from 'react'
 import DatePicker from '@/components/DatePicker'
 
 interface WarungItem {
@@ -38,6 +37,45 @@ export default function TambahDistribusiPage({ params }: Props) {
   ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isDirty, setIsDirty] = useState(false)
+
+  // 1. Load Draft on Mount
+  useEffect(() => {
+    const draft = localStorage.getItem(`draft_distribusi_${pangkalanId}`)
+    if (draft) {
+      try {
+        const { pengirim: dP, tanggalKirim: dT, warungList: dW } = JSON.parse(draft)
+        setPengirim(dP)
+        setTanggalKirim(dT)
+        setWarungList(dW)
+        setIsDirty(true)
+      } catch (e) {
+        console.error('Failed to load draft', e)
+      }
+    }
+  }, [pangkalanId])
+
+  // 2. Confirmation before unload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
+
+  // 3. Auto-save Draft
+  useEffect(() => {
+    if (pengirim || warungList.some(w => w.nama_warung || w.nama_penerima || w.nik)) {
+      setIsDirty(true)
+      const draftData = { pengirim, tanggalKirim, warungList }
+      localStorage.setItem(`draft_distribusi_${pangkalanId}`, JSON.stringify(draftData))
+    }
+  }, [pengirim, tanggalKirim, warungList, pangkalanId])
 
   const addWarung = () => {
     setWarungList([...warungList, { id: generateId(), nama_warung: '', nama_penerima: '', nik: '', link_lokasi: '' }])
