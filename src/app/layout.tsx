@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from 'next/font/google'
 import "./globals.css";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+})
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://monitoring-lpg.netlify.app";
 const APP_NAME = "Monitoring Distribusi LPG 3Kg";
@@ -117,14 +123,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" className={inter.className}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet"
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

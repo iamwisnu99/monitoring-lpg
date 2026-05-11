@@ -23,6 +23,7 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // 1. Ambil data pangkalan utama (1 round-trip)
   const { data: pangkalan } = await supabase
     .from('pangkalan')
     .select('*, parent:parent_id(id, nama_pangkalan)')
@@ -32,23 +33,27 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
 
   if (!pangkalan) notFound()
 
-  // Ambil daftar pangkalan lain (sub-pangkalan) jika pangkalan ini adalah pangkalan utama
-  // Atau ambil pangkalan "saudara" jika ini adalah sub-pangkalan
-  const { data: subPangkalans } = await supabase
-    .from('pangkalan')
-    .select('id, nama_pangkalan, penanggung_jawab')
-    .eq('parent_id', pangkalan.parent_id ? pangkalan.parent_id : pangkalan.id)
-    .neq('id', pangkalan.id) // Jangan tampilkan diri sendiri
+  const groupId = pangkalan.parent_id ? pangkalan.parent_id : pangkalan.id
 
-  // Ambil total count dan data dengan warung names
-  const { data: distribusiList, count: totalCount } = await supabase
-    .from('distribusi')
-    .select('*, warung_tujuan(id, nama_warung)', { count: 'exact' })
-    .eq('pangkalan_id', id)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + PER_PAGE - 1)
+  // 2. Ambil data grup dan distribusi secara PARALEL (1 round-trip untuk keduanya)
+  const [groupRes, distRes] = await Promise.all([
+    supabase
+      .from('pangkalan')
+      .select('id, nama_pangkalan, penanggung_jawab')
+      .or(`id.eq.${groupId},parent_id.eq.${groupId}`),
+    supabase
+      .from('distribusi')
+      .select('*, pangkalan(nama_pangkalan), warung_tujuan(id, nama_warung)', { count: 'exact' })
+      // Kita gunakan filter yang mencakup pangkalan utama dan semua cabangnya
+      .or(`pangkalan_id.eq.${groupId},pangkalan.parent_id.eq.${groupId}` as any)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PER_PAGE - 1)
+  ])
 
-  const totalDistribusi = totalCount ?? 0
+  const groupPangkalans = groupRes.data || []
+  const subPangkalans = groupPangkalans.filter(p => p.id !== pangkalan.id)
+  const distribusiList = distRes.data || []
+  const totalDistribusi = distRes.count ?? 0
   const totalPages = Math.ceil(totalDistribusi / PER_PAGE)
 
   return (
@@ -229,9 +234,14 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
                     <div key={d.id} className="px-5 py-4">
                       {/* Tanggal + jumlah warung */}
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(d.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        <div className="flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(d.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </div>
+                          {(d.pangkalan as any)?.nama_pangkalan && (d.pangkalan as any).nama_pangkalan !== pangkalan.nama_pangkalan && (
+                            <span className="text-[10px] text-slate-400 font-medium">via {(d.pangkalan as any).nama_pangkalan}</span>
+                          )}
                         </div>
                         <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#009345' }}>
                           {warungItems.length} warung

@@ -20,25 +20,33 @@ export default async function DistribusiPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Daftar pangkalan untuk filter dropdown
-  const { data: pangkalanList } = await supabase
-    .from('pangkalan')
-    .select('id, nama_pangkalan')
-    .eq('user_id', user!.id)
-    .order('nama_pangkalan')
+  // Jalankan query secara PARALEL
+  const [pangkalanRes, distribusiRes] = await Promise.all([
+    supabase
+      .from('pangkalan')
+      .select('id, nama_pangkalan')
+      .eq('user_id', user!.id)
+      .order('nama_pangkalan'),
+    (() => {
+      let query = supabase
+        .from('distribusi')
+        .select('id, created_at, pengirim, pangkalan!inner(id, nama_pangkalan, user_id), warung_tujuan(id, nama_warung, nama_penerima, nik, link_lokasi)')
+        .eq('pangkalan.user_id', user!.id)
 
-  // Query distribusi + warung
-  let distQuery = supabase
-    .from('distribusi')
-    .select('id, created_at, pengirim, pangkalan!inner(id, nama_pangkalan, user_id), warung_tujuan(id, nama_warung, nama_penerima, nik, link_lokasi)')
-    .eq('pangkalan.user_id', user!.id)
-    .order('created_at', { ascending: false })
+      if (search) {
+        query = query.or(`pengirim.ilike.%${search}%,warung_tujuan.nama_warung.ilike.%${search}%,warung_tujuan.nama_penerima.ilike.%${search}%,warung_tujuan.nik.ilike.%${search}%`)
+      }
 
-  if (pangkalanFilter) {
-    distQuery = distQuery.eq('pangkalan_id', pangkalanFilter)
-  }
+      if (pangkalanFilter) {
+        query = query.eq('pangkalan_id', pangkalanFilter)
+      }
 
-  const { data: distribusiList } = await distQuery
+      return query.order('created_at', { ascending: false })
+    })()
+  ])
+
+  const pangkalanList = pangkalanRes.data
+  const distribusiList = distribusiRes.data
 
   // Flatten warung dari semua distribusi
   type WarungCard = {

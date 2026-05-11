@@ -12,10 +12,19 @@ export default function PWAInstallPrompt() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     if (isStandalone) return
 
+    // Cek jika baru saja di-dismiss (dalam 24 jam terakhir)
+    const dismissedAt = localStorage.getItem('pwa_prompt_dismissed_at')
+    if (dismissedAt) {
+      const lastDismissed = parseInt(dismissedAt)
+      const now = Date.now()
+      const oneDay = 24 * 60 * 60 * 1000
+      if (now - lastDismissed < oneDay) return
+    }
+
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault()
       setDeferredPrompt(e)
-      // Tampilkan banner setelah beberapa detik agar tidak terlalu mengganggu
+      // Tampilkan banner setelah beberapa detik
       const timer = setTimeout(() => setShow(true), 3000)
       return () => clearTimeout(timer)
     }
@@ -53,7 +62,10 @@ export default function PWAInstallPrompt() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setShow(false)}
+            onClick={() => {
+              setShow(false)
+              localStorage.setItem('pwa_prompt_dismissed_at', Date.now().toString())
+            }}
             className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
           >
             <X className="w-5 h-5" />

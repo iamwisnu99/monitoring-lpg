@@ -21,20 +21,23 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch stats
-  const [{ count: totalPangkalan }, { count: totalDistribusi }, { count: totalWarung }] = await Promise.all([
-    supabase.from('pangkalan').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
-    supabase.from('distribusi').select('*, pangkalan!inner(user_id)', { count: 'exact', head: true }).eq('pangkalan.user_id', user!.id),
-    supabase.from('warung_tujuan').select('*, distribusi!inner(pangkalan!inner(user_id))', { count: 'exact', head: true }).eq('distribusi.pangkalan.user_id', user!.id),
+  // Fetch stats and recent distribusi in parallel
+  const [statsResults, recentResult] = await Promise.all([
+    Promise.all([
+      supabase.from('pangkalan').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
+      supabase.from('distribusi').select('*, pangkalan!inner(user_id)', { count: 'exact', head: true }).eq('pangkalan.user_id', user!.id),
+      supabase.from('warung_tujuan').select('*, distribusi!inner(pangkalan!inner(user_id))', { count: 'exact', head: true }).eq('distribusi.pangkalan.user_id', user!.id),
+    ]),
+    supabase
+      .from('distribusi')
+      .select('*, pangkalan(nama_pangkalan, user_id)')
+      .eq('pangkalan.user_id', user!.id)
+      .order('created_at', { ascending: false })
+      .limit(5)
   ])
 
-  // Recent distribusi
-  const { data: recentDistribusi } = await supabase
-    .from('distribusi')
-    .select('*, pangkalan(nama_pangkalan, user_id)')
-    .eq('pangkalan.user_id', user!.id)
-    .order('created_at', { ascending: false })
-    .limit(5)
+  const [{ count: totalPangkalan }, { count: totalDistribusi }, { count: totalWarung }] = statsResults
+  const recentDistribusi = recentResult.data
 
   const namaAgen = user?.user_metadata?.nama_agen as string | undefined
 
