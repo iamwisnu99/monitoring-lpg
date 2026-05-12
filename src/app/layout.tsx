@@ -9,15 +9,14 @@ const inter = Inter({
 })
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://monitoring-lpg.netlify.app";
-const APP_NAME = "Monitoring Distribusi LPG 3Kg";
-const APP_DESCRIPTION =
-  "Sistem pencatatan dan monitoring distribusi LPG 3Kg untuk agen dan pangkalan. Kelola pangkalan, catat distribusi, dan pantau aktivitas secara real-time.";
+const APP_NAME = "Kemitraan Agen";
+const APP_DESCRIPTION = "Aplikasi monitoring distribusi LPG 3Kg untuk agen resmi Pertamina.";
 
 export const metadata: Metadata = {
   // ── Dasar ──────────────────────────────────────────────────────────────
   title: {
     default: APP_NAME,
-    template: `%s — ${APP_NAME}`,
+    template: `%s - ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
   applicationName: APP_NAME,
@@ -78,14 +77,17 @@ export const metadata: Metadata = {
     locale: "id_ID",
     url: APP_URL,
     siteName: APP_NAME,
-    title: APP_NAME,
+    title: {
+      default: APP_NAME,
+      template: `%s - ${APP_NAME}`,
+    },
     description: APP_DESCRIPTION,
     images: [
       {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Monitoring Distribusi LPG 3Kg — Sistem pencatatan dan monitoring distribusi",
+        url: "/web-app-manifest-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "Kemitraan Agen - Monitoring Distribusi LPG 3Kg",
         type: "image/png",
       },
     ],
@@ -93,10 +95,13 @@ export const metadata: Metadata = {
 
   // ── Twitter / X Card ──────────────────────────────────────────────────
   twitter: {
-    card: "summary_large_image",
-    title: APP_NAME,
+    card: "summary",
+    title: {
+      default: APP_NAME,
+      template: `%s - ${APP_NAME}`,
+    },
     description: APP_DESCRIPTION,
-    images: ["/og-image.png"],
+    images: ["/web-app-manifest-512x512.png"],
   },
 
   // ── PWA / Browser Color ────────────────────────────────────────────────

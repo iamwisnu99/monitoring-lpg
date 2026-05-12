@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export const metadata: Metadata = {
   title: 'Pangkalan',
   description: 'Daftar semua pangkalan LPG 3Kg yang terdaftar di akun Anda.',
-  openGraph: { title: 'Pangkalan — Monitoring Distribusi LPG 3Kg' },
+  openGraph: { title: 'Pangkalan - Kemitraan Agen' },
 }
 import Link from 'next/link'
 import { Plus, Warehouse, ChevronRight, Users, Calendar } from 'lucide-react'

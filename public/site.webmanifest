@@ -1,6 +1,6 @@
 {
-  "name": "Monitoring Distribusi LPG 3Kg",
-  "short_name": "Monitoring LPG",
+  "name": "Kemitraan Agen",
+  "short_name": "Kemitraan Agen",
   "description": "Sistem pencatatan dan monitoring distribusi LPG 3Kg untuk agen dan pangkalan",
   "start_url": "/",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "lang": "id",
   "icons": [
     {
-      "src": "/favicon-96x96.png",
+      "src": "/web-app-manifest-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any"

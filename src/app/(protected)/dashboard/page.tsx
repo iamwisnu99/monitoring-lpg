@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export const metadata: Metadata = {
   title: 'Dashboard',
   description: 'Ringkasan data pangkalan, distribusi, dan warung tujuan LPG 3Kg Anda.',
-  openGraph: { title: 'Dashboard — Monitoring Distribusi LPG 3Kg' },
+  openGraph: { title: 'Dashboard - Kemitraan Agen' },
 }
 import Link from 'next/link'
 import {

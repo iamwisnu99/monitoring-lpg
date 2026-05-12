@@ -29,7 +29,15 @@ interface Distribusi {
   warung_tujuan: WarungTujuan[]
 }
 
-export default function MonitoringClient({ data }: { data: Distribusi[] }) {
+export default function MonitoringClient({
+  data,
+  namaAgen,
+  userEmail
+}: {
+  data: Distribusi[],
+  namaAgen?: string,
+  userEmail?: string
+}) {
   const [search, setSearch] = useState('')
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
 
@@ -58,70 +66,264 @@ export default function MonitoringClient({ data }: { data: Distribusi[] }) {
   const expandAll = () => setExpandedIds(new Set(filtered.map((d) => d.id)))
   const collapseAll = () => setExpandedIds(new Set())
 
+  // Helper untuk mendapatkan base64 image (untuk logo PDF)
+  const getBase64ImageFromUrl = async (url: string): Promise<string> => {
+    const res = await fetch(url)
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.readAsDataURL(blob)
+    })
+  }
+
   const exportExcel = async () => {
-    const { utils, writeFile } = await import('xlsx')
-    const rows: any[] = []
+    const ExcelJS = await import('exceljs')
+    const { saveAs } = await import('file-saver')
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Laporan Monitoring')
+
+    // 1. Tambahkan Logo
+    try {
+      const response = await fetch('/pertamina_logo.png')
+      const blob = await response.blob()
+      const arrayBuffer = await blob.arrayBuffer()
+      const logoId = workbook.addImage({
+        buffer: arrayBuffer,
+        extension: 'png',
+      })
+      
+      // Lebarkan kolom A dan tinggikan baris 1 untuk ruang logo
+      worksheet.getColumn(1).width = 30
+      worksheet.getRow(1).height = 120
+
+      // Letakkan logo di sel A1 dengan offset yang pas
+      worksheet.addImage(logoId, {
+        tl: { col: 0.1, row: 0.1 },
+        ext: { width: 110, height: 110 },
+        editAs: 'oneCell'
+      })
+    } catch (e) {
+      console.error('Excel Logo Error:', e)
+    }
+
+    // 2. Info Header (Disebelah logo, mulai dari baris 1)
+    worksheet.mergeCells('B1:H1')
+    const titleCell = worksheet.getCell('B1')
+    titleCell.value = 'LAPORAN KEMITRAAN AGEN - MONITORING DISTRIBUSI'
+    titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FF009345' } }
+    titleCell.alignment = { vertical: 'middle', horizontal: 'left', indent: 10 }
+
+    // Gunakan baris 2, 3, 4 untuk info agar sejajar dengan tinggi logo di baris 1 yang tinggi
+    worksheet.getCell('B2').value = 'Agen:'
+    worksheet.getCell('C2').value = namaAgen || 'Admin LPG'
+    worksheet.getCell('C2').font = { bold: true }
+    
+    worksheet.getCell('B3').value = 'Email:'
+    worksheet.getCell('C3').value = userEmail || '-'
+
+    worksheet.getCell('B4').value = 'Tanggal:'
+    worksheet.getCell('C4').value = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+
+    // Beri perataan tengah untuk info
+    const infoRows = [2, 3, 4]
+    infoRows.forEach(r => {
+      worksheet.getRow(r).alignment = { vertical: 'middle' }
+    })
+
+    // 3. Spasi sebelum tabel
+    const startRow = 7
+
+    // 4. Header Tabel
+    const headers = ['No', 'Pangkalan', 'Penanggung Jawab', 'Pengirim', 'Tanggal Kirim', 'Nama Warung', 'Nama Penerima', 'NIK', 'Link Lokasi']
+    const headerRow = worksheet.getRow(startRow)
+    headerRow.values = headers
+
+    // Styling Header
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF009345' }
+      }
+      cell.font = { color: { argb: 'FFFFFFFF' }, bold: true }
+      cell.alignment = { vertical: 'middle', horizontal: 'center' }
+      cell.border = {
+        top: { style: 'thin' },
+        left: { style: 'thin' },
+        bottom: { style: 'thin' },
+        right: { style: 'thin' }
+      }
+    })
+
+    // 5. Isi Data
+    let currentRow = startRow + 1
+    let counter = 1
+
     filtered.forEach((d) => {
       d.warung_tujuan.forEach((w) => {
-        rows.push({
-          'Pangkalan': d.pangkalan.nama_pangkalan,
-          'Penanggung Jawab': d.pangkalan.penanggung_jawab,
-          'Pengirim': d.pengirim,
-          'Tanggal Kirim': new Date(d.tanggal_kirim).toLocaleDateString('id-ID'),
-          'Nama Warung': w.nama_warung,
-          'Nama Penerima': w.nama_penerima,
-          'NIK': w.nik,
-          'Link Lokasi': w.link_lokasi,
+        const rowData = [
+          counter++,
+          d.pangkalan.nama_pangkalan,
+          d.pangkalan.penanggung_jawab,
+          d.pengirim,
+          new Date(d.tanggal_kirim).toLocaleDateString('id-ID'),
+          w.nama_warung,
+          w.nama_penerima,
+          w.nik,
+          w.link_lokasi || '-'
+        ]
+        const row = worksheet.addRow(rowData)
+
+        // Styling Baris Data
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          }
+          cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }
         })
+
+        // Zebra Striping (Baris Genap)
+        if (row.number % 2 === 0) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFF8FAFC' }
+            }
+          })
+        }
       })
     })
-    const ws = utils.json_to_sheet(rows)
-    const wb = utils.book_new()
-    utils.book_append_sheet(wb, ws, 'Monitoring LPG')
-    writeFile(wb, `monitoring-lpg-${new Date().toISOString().split('T')[0]}.xlsx`)
+
+    // 6. Atur Lebar Kolom
+    worksheet.columns = [
+      { width: 5 },  // No
+      { width: 25 }, // Pangkalan
+      { width: 20 }, // PJ
+      { width: 20 }, // Pengirim
+      { width: 15 }, // Tgl
+      { width: 25 }, // Warung
+      { width: 20 }, // Penerima
+      { width: 20 }, // NIK
+      { width: 35 }, // Link
+    ]
+
+    // 7. Simpan File
+    const buffer = await workbook.xlsx.writeBuffer()
+    saveAs(new Blob([buffer]), `Laporan-Monitoring-Kemitraan-Agen-${new Date().toISOString().split('T')[0]}.xlsx`)
   }
 
   const exportPDF = async () => {
     const { default: jsPDF } = await import('jspdf')
     const doc = new jsPDF()
-    let y = 15
 
+    try {
+      // Load Logo
+      const logoBase64 = await getBase64ImageFromUrl('/pertamina_logo.png')
+      // Logo di kiri
+      doc.addImage(logoBase64, 'PNG', 14, 10, 20, 20)
+    } catch (e) {
+      console.error('Failed to load logo', e)
+    }
+
+    // Info Agen di samping kanan logo
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(12)
+    doc.setTextColor(50)
+    doc.text(namaAgen || 'Admin LPG', 38, 18)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(100)
+    doc.text(userEmail || '-', 38, 23)
+    doc.text(`Dicetak pada: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 38, 28)
+
+    // Garis Pemisah Header
+    doc.setDrawColor(200, 200, 200)
+    doc.setLineWidth(0.5)
+    doc.line(14, 35, 196, 35)
+
+    // Judul di bawah garis
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(14)
-    doc.text('Laporan Monitoring Distribusi LPG 3Kg', 14, y)
-    y += 6
-    doc.setFontSize(9)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(120)
-    doc.text(`Digenerate: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 14, y)
-    y += 10
-    doc.setTextColor(0)
+    doc.setTextColor(0, 147, 69) // Green Pertamina
+    doc.text('LAPORAN KEMITRAAN AGEN - MONITORING DISTRIBUSI', 14, 45)
 
-    filtered.forEach((d, i) => {
-      if (y > 260) { doc.addPage(); y = 15 }
+    let y = 55
+
+    // Table Header Background
+    doc.setFillColor(248, 250, 252)
+    doc.rect(14, y - 6, 182, 8, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(50)
+    doc.text('NO', 16, y - 1)
+    doc.text('PANGKALAN / WARUNG', 30, y - 1)
+    doc.text('Penerima', 110, y - 1)
+    doc.text('NIK', 150, y - 1)
+    doc.text('TANGGAL', 175, y - 1)
+
+    y += 8
+
+    let counter = 1
+    filtered.forEach((d) => {
+      // Check for new page
+      if (y > 270) { doc.addPage(); y = 20 }
+
+      // Pangkalan Row (Highlight)
+      doc.setFillColor(241, 245, 249)
+      doc.rect(14, y - 5, 182, 7, 'F')
       doc.setFont('helvetica', 'bold')
-      doc.setFontSize(11)
-      doc.text(`${i + 1}. ${d.pangkalan.nama_pangkalan}`, 14, y)
-      y += 5
+      doc.setTextColor(0, 122, 56)
+      doc.text(`${counter++}. PANGKALAN: ${d.pangkalan.nama_pangkalan.toUpperCase()}`, 16, y)
+      doc.setFontSize(8)
+      doc.setTextColor(100)
+      doc.text(new Date(d.tanggal_kirim).toLocaleDateString('id-ID'), 175, y)
+      y += 8
+
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(9)
-      doc.text(`Penanggung Jawab: ${d.pangkalan.penanggung_jawab}   |   Pengirim: ${d.pengirim}   |   Tanggal: ${new Date(d.tanggal_kirim).toLocaleDateString('id-ID')}`, 18, y)
-      y += 5
+      doc.setTextColor(50)
+
       d.warung_tujuan.forEach((w, wi) => {
-        if (y > 270) { doc.addPage(); y = 15 }
-        doc.text(`  ${wi + 1}. ${w.nama_warung} — ${w.nama_penerima} — NIK: ${w.nik}`, 18, y)
-        y += 4
+        if (y > 280) { doc.addPage(); y = 20 }
+
+        // Warung Detail
+        doc.text(`${wi + 1}`, 20, y)
+        doc.text(w.nama_warung, 30, y)
+        doc.text(w.nama_penerima, 110, y)
+        doc.text(w.nik, 150, y)
+
+        y += 6
+
         if (w.link_lokasi) {
-          doc.setTextColor(37, 99, 235)
-          doc.text(`     ${w.link_lokasi}`, 18, y)
-          doc.setTextColor(0)
-          y += 4
+          doc.setFontSize(7)
+          doc.setTextColor(0, 179, 86)
+          doc.text(`Lokasi: ${w.link_lokasi}`, 30, y - 1)
+          doc.setTextColor(50)
+          doc.setFontSize(9)
+          y += 5
         }
       })
       y += 4
     })
 
-    doc.save(`monitoring-lpg-${new Date().toISOString().split('T')[0]}.pdf`)
+    // Footer
+    const pageCount = (doc as any).internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      doc.setFontSize(8)
+      doc.setTextColor(150)
+      doc.text('Halaman ' + i + ' dari ' + pageCount, 100, 287, { align: 'center' })
+      doc.text('Kemitraan Agen - Sistem Monitoring LPG 3Kg', 14, 287)
+    }
+
+    doc.save(`Laporan-Monitoring-LPG-${new Date().toISOString().split('T')[0]}.pdf`)
   }
 
   const totalWarung = filtered.reduce((acc, d) => acc + d.warung_tujuan.length, 0)

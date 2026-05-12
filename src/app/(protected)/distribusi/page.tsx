@@ -4,9 +4,9 @@ import Link from 'next/link'
 import { Store, Warehouse, Calendar, Search, MapPin, CreditCard, User, Filter } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Dashboard Distribusi',
+  title: 'Distribusi',
   description: 'Lihat semua data warung penerima LPG 3Kg dari seluruh pangkalan Anda.',
-  openGraph: { title: 'Dashboard Distribusi — Monitoring Distribusi LPG 3Kg' },
+  openGraph: { title: 'Distribusi - Kemitraan Agen' },
 }
 
 interface SearchParams { q?: string; pangkalan_id?: string }

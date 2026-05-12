@@ -1,8 +1,9 @@
 const CACHE_NAME = 'lpg-monitor-v2';
 const ASSETS_TO_CACHE = [
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/web-app-manifest-96x96.png',
+  '/web-app-manifest-192x192.png',
+  '/web-app-manifest-512x512.png'
 ];
 
 // Install: Simpan aset statis (ikon & manifest)

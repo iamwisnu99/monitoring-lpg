@@ -50,9 +50,10 @@ function LoginContent() {
               width={120}
               height={40}
               className="object-contain mb-3"
+              style={{ height: 'auto' }}
               priority
             />
-            <h1 className="text-base font-semibold text-slate-700">Monitoring Distribusi LPG 3Kg</h1>
+            <h1 className="text-base font-semibold text-slate-700">Kemitraan Agen</h1>
           </div>
 
           {/* Form area */}
@@ -142,7 +143,7 @@ function LoginContent() {
         </div>
 
         <p className="text-center text-slate-400 text-xs mt-5">
-          © {new Date().getFullYear()} Pertamina — Monitoring LPG 3Kg
+          © {new Date().getFullYear()} Kemitraan Agen | All Rights Reserved
         </p>
       </div>
     </div>

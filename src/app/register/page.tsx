@@ -186,7 +186,7 @@ export default function RegisterPage() {
         </div>
 
         <p className="text-center text-slate-400 text-xs mt-5">
-          © {new Date().getFullYear()} Pertamina — Monitoring LPG 3Kg
+          © {new Date().getFullYear()} Kemitraan Agen | All Right Reserved
         </p>
       </div>
     </div>

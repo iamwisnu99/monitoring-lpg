@@ -3,9 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import MonitoringClient from './MonitoringClient'
 
 export const metadata: Metadata = {
-  title: 'Monitoring Admin',
+  title: 'Monitoring',
   description: 'Pantau seluruh aktivitas distribusi LPG 3Kg. Export data ke Excel atau PDF.',
-  openGraph: { title: 'Monitoring Admin — Monitoring Distribusi LPG 3Kg' },
+  openGraph: { title: 'Monitoring - Kemitraan Agen' },
 }
 
 export default async function MonitoringPage() {
@@ -22,5 +22,8 @@ export default async function MonitoringPage() {
     .eq('pangkalan.user_id', user!.id)
     .order('tanggal_kirim', { ascending: false })
 
-  return <MonitoringClient data={distribusiData || []} />
+  const namaAgen = user?.user_metadata?.nama_agen as string | undefined
+  const userEmail = user?.email
+
+  return <MonitoringClient data={distribusiData || []} namaAgen={namaAgen} userEmail={userEmail} />
 }

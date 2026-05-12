@@ -12,6 +12,15 @@ interface Props {
   searchParams: Promise<{ page?: string }>
 }
 
+export async function generateMetadata({ params }: Props) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data } = await supabase.from('pangkalan').select('nama_pangkalan').eq('id', id).single()
+  return {
+    title: data?.nama_pangkalan || 'Detail Pangkalan',
+  }
+}
+
 const PER_PAGE = 5
 
 export default async function DetailPangkalanPage({ params, searchParams }: Props) {
