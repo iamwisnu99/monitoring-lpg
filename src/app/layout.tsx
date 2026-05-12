@@ -109,6 +109,11 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#1e40af",
     "msapplication-config": "/browserconfig.xml",
   },
+
+  // ── Verifikasi Search Engine ──────────────────────────────────────────
+  verification: {
+    google: "bVxOlhuVPtiO4w5vyCBVruV5ShhorXFRyj0dGJY95Fw",
+  },
 };
 
 // Viewport terpisah dari metadata (Next.js 14+)
