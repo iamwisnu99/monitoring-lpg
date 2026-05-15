@@ -6,13 +6,15 @@ import {
   BarChart3, Search, Download, MapPin, User, CreditCard,
   Warehouse, Calendar, ChevronDown, ChevronUp, Truck, FileSpreadsheet, FileText
 } from 'lucide-react'
+import { TabungIcon } from '@/components/icons/TabungIcon'
 
 interface WarungTujuan {
   id: string
   distribusi_id: string
   nama_warung: string
   nama_penerima: string
-  nik: string
+  tabung_dimiliki: number | null
+  harga_jual: number
   link_lokasi: string
   created_at: string
 }
@@ -51,7 +53,8 @@ export default function MonitoringClient({
       d.warung_tujuan.some((w) =>
         w.nama_warung.toLowerCase().includes(q) ||
         w.nama_penerima.toLowerCase().includes(q) ||
-        w.nik.includes(q)
+        w.tabung_dimiliki?.toString().includes(q) ||
+        w.harga_jual?.toString().includes(q)
       )
     )
   }, [data, search])
@@ -136,7 +139,7 @@ export default function MonitoringClient({
     const startRow = 7
 
     // 4. Header Tabel
-    const headers = ['No', 'Pangkalan', 'Penanggung Jawab', 'Pengirim', 'Tanggal Kirim', 'Nama Warung', 'Nama Penerima', 'NIK', 'Link Lokasi']
+    const headers = ['No', 'Pangkalan', 'Penanggung Jawab', 'Pengirim', 'Tanggal Kirim', 'Nama Warung', 'Nama Penerima', 'Tabung Dimiliki', 'Harga Jual', 'Link Lokasi']
     const headerRow = worksheet.getRow(startRow)
     headerRow.values = headers
 
@@ -171,7 +174,8 @@ export default function MonitoringClient({
           new Date(d.tanggal_kirim).toLocaleDateString('id-ID'),
           w.nama_warung,
           w.nama_penerima,
-          w.nik,
+          w.tabung_dimiliki !== null ? w.tabung_dimiliki : 'Belum Diatur',
+          w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : 'Belum Diatur',
           w.link_lokasi || '-'
         ]
         const row = worksheet.addRow(rowData)
@@ -209,7 +213,8 @@ export default function MonitoringClient({
       { width: 15 }, // Tgl
       { width: 25 }, // Warung
       { width: 20 }, // Penerima
-      { width: 20 }, // NIK
+      { width: 15 }, // Tabung
+      { width: 15 }, // Harga Jual
       { width: 35 }, // Link
     ]
 
@@ -264,9 +269,10 @@ export default function MonitoringClient({
     doc.setTextColor(50)
     doc.text('NO', 16, y - 1)
     doc.text('PANGKALAN / WARUNG', 30, y - 1)
-    doc.text('Penerima', 110, y - 1)
-    doc.text('NIK', 150, y - 1)
-    doc.text('TANGGAL', 175, y - 1)
+    doc.text('Penerima', 100, y - 1)
+    doc.text('Tabung', 135, y - 1)
+    doc.text('Harga', 155, y - 1)
+    doc.text('TANGGAL', 178, y - 1)
 
     y += 8
 
@@ -296,8 +302,9 @@ export default function MonitoringClient({
         // Warung Detail
         doc.text(`${wi + 1}`, 20, y)
         doc.text(w.nama_warung, 30, y)
-        doc.text(w.nama_penerima, 110, y)
-        doc.text(w.nik, 150, y)
+        doc.text(w.nama_penerima, 100, y)
+        doc.text(w.tabung_dimiliki !== null ? String(w.tabung_dimiliki) : 'N/A', 135, y)
+        doc.text(w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : 'N/A', 155, y)
 
         y += 6
 
@@ -369,7 +376,7 @@ export default function MonitoringClient({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Cari pangkalan, pengirim, warung, atau NIK..."
+            placeholder="Cari pangkalan, pengirim, warung, atau jumlah tabung..."
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-sm outline-none transition-all focus:border-green-600 focus:ring-2 focus:ring-green-100"
             style={{ background: '#ffffff' }}
           />
@@ -450,9 +457,13 @@ export default function MonitoringClient({
                                 <User className="w-3 h-3" />
                                 {w.nama_penerima}
                               </p>
-                              <p className="text-xs text-slate-500 flex items-center gap-1 font-mono">
-                                <CreditCard className="w-3 h-3" />
-                                {w.nik}
+                              <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+                                <TabungIcon size={14} className="text-slate-400" />
+                                Tabung: {w.tabung_dimiliki !== null ? w.tabung_dimiliki : <span className="text-orange-500 italic">Belum Diatur</span>}
+                              </p>
+                              <p className="text-xs text-slate-500 flex items-center gap-1 font-medium">
+                                <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                                Harga: {w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : <span className="text-orange-500 italic">Belum Diatur</span>}
                               </p>
                               {w.link_lokasi && (
                                 <a href={w.link_lokasi} target="_blank" rel="noopener noreferrer"

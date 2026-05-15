@@ -62,7 +62,8 @@ export type Database = {
           distribusi_id: string
           nama_warung: string
           nama_penerima: string
-          nik: string
+          tabung_dimiliki: number | null
+          harga_jual: number
           link_lokasi: string
           created_at: string
         }
@@ -71,7 +72,8 @@ export type Database = {
           distribusi_id: string
           nama_warung: string
           nama_penerima: string
-          nik: string
+          tabung_dimiliki?: number | null
+          harga_jual?: number
           link_lokasi: string
           created_at?: string
         }
@@ -80,7 +82,8 @@ export type Database = {
           distribusi_id?: string
           nama_warung?: string
           nama_penerima?: string
-          nik?: string
+          tabung_dimiliki?: number | null
+          harga_jual?: number
           link_lokasi?: string
           created_at?: string
         }

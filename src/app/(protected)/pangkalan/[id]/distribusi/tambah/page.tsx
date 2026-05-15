@@ -14,7 +14,8 @@ interface WarungItem {
   id: string
   nama_warung: string
   nama_penerima: string
-  nik: string
+  tabung_dimiliki: string
+  harga_jual: string
   link_lokasi: string
 }
 
@@ -33,7 +34,7 @@ export default function TambahDistribusiPage({ params }: Props) {
   const [pengirim, setPengirim] = useState('')
   const [tanggalKirim, setTanggalKirim] = useState(new Date().toISOString().split('T')[0])
   const [warungList, setWarungList] = useState<WarungItem[]>([
-    { id: generateId(), nama_warung: '', nama_penerima: '', nik: '', link_lokasi: '' }
+    { id: generateId(), nama_warung: '', nama_penerima: '', tabung_dimiliki: '', harga_jual: '', link_lokasi: '' }
   ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -70,7 +71,7 @@ export default function TambahDistribusiPage({ params }: Props) {
 
   // 3. Auto-save Draft
   useEffect(() => {
-    if (pengirim || warungList.some(w => w.nama_warung || w.nama_penerima || w.nik)) {
+    if (pengirim || warungList.some(w => w.nama_warung || w.nama_penerima || w.tabung_dimiliki || w.harga_jual || w.link_lokasi)) {
       setIsDirty(true)
       const draftData = { pengirim, tanggalKirim, warungList }
       localStorage.setItem(`draft_distribusi_${pangkalanId}`, JSON.stringify(draftData))
@@ -78,7 +79,7 @@ export default function TambahDistribusiPage({ params }: Props) {
   }, [pengirim, tanggalKirim, warungList, pangkalanId])
 
   const addWarung = () => {
-    setWarungList([...warungList, { id: generateId(), nama_warung: '', nama_penerima: '', nik: '', link_lokasi: '' }])
+    setWarungList([...warungList, { id: generateId(), nama_warung: '', nama_penerima: '', tabung_dimiliki: '', harga_jual: '', link_lokasi: '' }])
   }
 
   const removeWarung = (id: string) => {
@@ -96,12 +97,16 @@ export default function TambahDistribusiPage({ params }: Props) {
 
     // Validate
     for (const w of warungList) {
-      if (!w.nama_warung.trim() || !w.nama_penerima.trim() || !w.nik.trim()) {
-        setError('Semua field warung wajib diisi.')
+      if (!w.nama_warung.trim() || !w.nama_penerima.trim() || !w.tabung_dimiliki.trim() || !w.harga_jual.trim()) {
+        setError('Semua field warung wajib diisi (termasuk Harga Jual).')
         return
       }
-      if (w.nik.length !== 16 || !/^\d+$/.test(w.nik)) {
-        setError(`NIK warung "${w.nama_warung}" harus 16 digit angka.`)
+      if (isNaN(Number(w.tabung_dimiliki))) {
+        setError(`Jumlah tabung warung "${w.nama_warung}" harus berupa angka.`)
+        return
+      }
+      if (isNaN(Number(w.harga_jual))) {
+        setError(`Harga jual warung "${w.nama_warung}" harus berupa angka.`)
         return
       }
     }
@@ -127,7 +132,8 @@ export default function TambahDistribusiPage({ params }: Props) {
       distribusi_id: distribusi.id,
       nama_warung: w.nama_warung.trim(),
       nama_penerima: w.nama_penerima.trim(),
-      nik: w.nik.trim(),
+      tabung_dimiliki: parseInt(w.tabung_dimiliki) || 0,
+      harga_jual: parseInt(w.harga_jual) || 0,
       link_lokasi: w.link_lokasi.trim(),
     }))
 
@@ -138,6 +144,10 @@ export default function TambahDistribusiPage({ params }: Props) {
       setLoading(false)
       return
     }
+
+    // Clear draft
+    localStorage.removeItem(`draft_distribusi_${pangkalanId}`)
+    setIsDirty(false)
 
     router.push(`/pangkalan/${pangkalanId}`)
     router.refresh()
@@ -277,23 +287,44 @@ export default function TambahDistribusiPage({ params }: Props) {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-slate-600 mb-1">NIK (16 digit) *</label>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Tabung Dimiliki *</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">#</span>
+                        <input
+                          id={`warung-tabung-${idx}`}
+                          type="number"
+                          inputMode="numeric"
+                          value={warung.tabung_dimiliki}
+                          onChange={(e) => updateWarung(warung.id, 'tabung_dimiliki', e.target.value)}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', ','].includes(e.key)) e.preventDefault()
+                          }}
+                          required
+                          min="0"
+                          placeholder="Jumlah tabung"
+                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 text-slate-800 text-sm outline-none transition-all focus:border-green-500 focus:ring-1 focus:ring-green-100 bg-white"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-600 mb-1">Harga Jual *</label>
                       <div className="relative">
                         <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <input
-                          id={`warung-nik-${idx}`}
-                          type="text"
-                          value={warung.nik}
-                          onChange={(e) => updateWarung(warung.id, 'nik', e.target.value.replace(/\D/g, '').slice(0, 16))}
+                          id={`warung-harga-${idx}`}
+                          type="number"
+                          inputMode="numeric"
+                          value={warung.harga_jual}
+                          onChange={(e) => updateWarung(warung.id, 'harga_jual', e.target.value)}
+                          onKeyDown={(e) => {
+                            if (['e', 'E', '+', '-', ','].includes(e.key)) e.preventDefault()
+                          }}
                           required
-                          maxLength={16}
-                          placeholder="16 digit NIK"
-                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 text-slate-800 text-sm outline-none transition-all focus:border-green-500 focus:ring-1 focus:ring-green-100 bg-white font-mono"
+                          min="0"
+                          placeholder="Contoh: 18000"
+                          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 text-slate-800 text-sm outline-none transition-all focus:border-green-500 focus:ring-1 focus:ring-green-100 bg-white"
                         />
                       </div>
-                      {warung.nik && warung.nik.length !== 16 && (
-                        <p className="text-xs text-orange-500 mt-0.5">{warung.nik.length}/16 digit</p>
-                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-600 mb-1">Link Lokasi (Google Maps)</label>

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import Toast from '@/components/Toast'
 import {
   LayoutDashboard,
   Warehouse,
@@ -27,9 +28,28 @@ const navItems = [
 export default function Sidebar({ userEmail, namaAgen }: { userEmail: string; namaAgen?: string }) {
   const pathname = usePathname()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [isEndingSession, setIsEndingSession] = useState(false)
+  const [showSuccessToast, setShowSuccessToast] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get('login') === 'success') {
+      setShowSuccessToast(true)
+      // Hapus parameter dari URL agar tidak muncul lagi saat refresh
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, '', newUrl)
+    }
+  }, [searchParams])
 
   const handleLogout = async () => {
+    setIsEndingSession(true)
+    setShowLogoutConfirm(false)
+
+    // Animasi loading premium
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
@@ -85,8 +105,8 @@ export default function Sidebar({ userEmail, namaAgen }: { userEmail: string; na
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Akun Terdaftar</p>
           <p className="text-xs font-bold text-slate-700 truncate mb-0.5">{namaAgen || 'Admin'}</p>
           <p className="text-[10px] text-slate-500 truncate">{userEmail}</p>
-          <button 
-            onClick={handleLogout}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
             className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-white border border-slate-200 text-[11px] font-bold text-red-500 hover:bg-red-50 hover:border-red-100 transition-all"
           >
             <LogOut className="w-3.5 h-3.5" /> Keluar Sesi
@@ -110,7 +130,7 @@ export default function Sidebar({ userEmail, namaAgen }: { userEmail: string; na
             priority
           />
         </div>
-        
+
         <div className="relative">
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -133,7 +153,7 @@ export default function Sidebar({ userEmail, namaAgen }: { userEmail: string; na
                 </div>
                 <div className="px-2">
                   <button
-                    onClick={handleLogout}
+                    onClick={() => setShowLogoutConfirm(true)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors"
                   >
                     <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center">
@@ -149,7 +169,7 @@ export default function Sidebar({ userEmail, namaAgen }: { userEmail: string; na
       </div>
 
       {/* ─── MOBILE BOTTOM NAVIGATION ─── */}
-      <div 
+      <div
         className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-100 shadow-[0_-8px-24px_-12px_rgba(0,0,0,0.1)]"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 8px)' }}
       >
@@ -184,6 +204,63 @@ export default function Sidebar({ userEmail, namaAgen }: { userEmail: string; na
       <aside className="hidden lg:flex flex-col w-64 fixed top-0 left-0 bottom-0 bg-white border-r border-slate-100 shadow-sm z-30 overflow-y-auto">
         <NavContent />
       </aside>
+
+      {/* ─── LOGOUT CONFIRMATION MODAL ─── */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowLogoutConfirm(false)} />
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden z-10 animate-scale-in">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+                <LogOut className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Konfirmasi Keluar</h3>
+              <p className="text-slate-500 text-sm mb-8">Apakah Anda yakin ingin mengakhiri sesi saat ini?</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="py-3.5 rounded-2xl text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 transition-all active:scale-95"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="py-3.5 rounded-2xl text-sm font-bold text-white shadow-lg shadow-red-200 transition-all active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}
+                >
+                  Ya, Keluar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── ENDING SESSION OVERLAY ─── */}
+      {isEndingSession && (
+        <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-slate-900/60 backdrop-blur-md animate-fade-in">
+          <div className="relative">
+            {/* Elegant Loading Spinner */}
+            <div className="w-20 h-20 rounded-full border-4 border-white/10 border-t-white animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse-slow" />
+            </div>
+          </div>
+          <p className="mt-6 text-white font-bold tracking-widest text-lg animate-pulse-slow">
+            Mengakhiri Sesi...
+          </p>
+        </div>
+      )}
+
+      {/* ─── SUCCESS LOGIN TOAST ─── */}
+      {showSuccessToast && (
+        <Toast
+          message="Login Berhasil!"
+          subMessage={`Selamat Datang, ${namaAgen || 'Admin'}`}
+          onClose={() => setShowSuccessToast(false)}
+        />
+      )}
     </>
   )
 }

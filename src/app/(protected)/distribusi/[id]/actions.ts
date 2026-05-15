@@ -25,7 +25,8 @@ export async function updateWarung(
   data: {
     nama_warung: string
     nama_penerima: string
-    nik: string
+    tabung_dimiliki: number | null
+    harga_jual: number
     link_lokasi: string
   }
 ) {

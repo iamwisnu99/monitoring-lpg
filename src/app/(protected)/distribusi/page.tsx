@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Store, Warehouse, Calendar, Search, MapPin, CreditCard, User, Filter } from 'lucide-react'
+import { TabungIcon } from '@/components/icons/TabungIcon'
 
 export const metadata: Metadata = {
   title: 'Distribusi',
@@ -30,11 +31,11 @@ export default async function DistribusiPage({
     (() => {
       let query = supabase
         .from('distribusi')
-        .select('id, created_at, pengirim, pangkalan!inner(id, nama_pangkalan, user_id), warung_tujuan(id, nama_warung, nama_penerima, nik, link_lokasi)')
+        .select('id, created_at, pengirim, pangkalan!inner(id, nama_pangkalan, user_id), warung_tujuan(id, nama_warung, nama_penerima, tabung_dimiliki, harga_jual, link_lokasi)')
         .eq('pangkalan.user_id', user!.id)
 
       if (search) {
-        query = query.or(`pengirim.ilike.%${search}%,warung_tujuan.nama_warung.ilike.%${search}%,warung_tujuan.nama_penerima.ilike.%${search}%,warung_tujuan.nik.ilike.%${search}%`)
+        query = query.or(`pengirim.ilike.%${search}%,warung_tujuan.nama_warung.ilike.%${search}%,warung_tujuan.nama_penerima.ilike.%${search}%`)
       }
 
       if (pangkalanFilter) {
@@ -53,7 +54,8 @@ export default async function DistribusiPage({
     warungId: string
     namaWarung: string
     namaPenerima: string
-    nik: string
+    tabung_dimiliki: number | null
+    harga_jual: number
     linkLokasi: string | null
     distribusiId: string
     namaPangkalan: string
@@ -62,11 +64,12 @@ export default async function DistribusiPage({
 
   const allWarung: WarungCard[] = (distribusiList ?? []).flatMap((d) => {
     const pangkalan = d.pangkalan as unknown as { id: string; nama_pangkalan: string }
-    return ((d.warung_tujuan as unknown as { id: string; nama_warung: string; nama_penerima: string; nik: string; link_lokasi: string | null }[]) ?? []).map((w) => ({
+    return ((d.warung_tujuan as unknown as { id: string; nama_warung: string; nama_penerima: string; tabung_dimiliki: number | null; harga_jual: number; link_lokasi: string | null }[]) ?? []).map((w) => ({
       warungId: w.id,
       namaWarung: w.nama_warung,
       namaPenerima: w.nama_penerima,
-      nik: w.nik,
+      tabung_dimiliki: w.tabung_dimiliki,
+      harga_jual: w.harga_jual,
       linkLokasi: w.link_lokasi,
       distribusiId: d.id,
       namaPangkalan: pangkalan?.nama_pangkalan ?? '-',
@@ -178,9 +181,13 @@ export default async function DistribusiPage({
                   <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                   <span className="truncate">{w.namaPenerima}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <CreditCard className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span className="font-mono">{w.nik}</span>
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <TabungIcon size={14} className="text-slate-400" />
+                  <span>Tabung: {w.tabung_dimiliki !== null ? w.tabung_dimiliki : <span className="text-orange-500 italic">Belum Diatur</span>}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Harga: {w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : <span className="text-orange-500 italic">Belum Diatur</span>}</span>
                 </div>
                 {w.linkLokasi && (
                   <div className="flex items-center gap-2 text-xs" style={{ color: '#009345' }}>

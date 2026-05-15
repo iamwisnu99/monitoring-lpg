@@ -31,7 +31,7 @@ function LoginContent() {
       return
     }
 
-    router.push('/dashboard')
+    router.push('/dashboard?login=success')
     router.refresh()
   }
 
@@ -53,7 +53,7 @@ function LoginContent() {
               style={{ height: 'auto' }}
               priority
             />
-            <h1 className="text-base font-semibold text-slate-700">Kemitraan Agen</h1>
+            <h1 className="text-base font-semibold text-slate-700">Kemitraan Agen - Monitoring LPG</h1>
           </div>
 
           {/* Form area */}

@@ -5,6 +5,7 @@ import {
   User, CreditCard, MapPin, ExternalLink, Pencil, Trash2, 
   ChevronLeft, ChevronRight, X, Save, Loader2, AlertCircle
 } from 'lucide-react'
+import { TabungIcon } from '@/components/icons/TabungIcon'
 import { WarungTujuan } from '@/lib/types'
 import MapEmbed from '@/components/MapEmbed'
 import { deleteWarung, updateWarung } from '@/app/(protected)/distribusi/[id]/actions'
@@ -59,7 +60,8 @@ export default function WarungList({ warungs: initialWarungs, distribusiId }: Pr
       await updateWarung(editingWarung.id, distribusiId, {
         nama_warung: editingWarung.nama_warung,
         nama_penerima: editingWarung.nama_penerima,
-        nik: editingWarung.nik,
+        tabung_dimiliki: editingWarung.tabung_dimiliki,
+        harga_jual: editingWarung.harga_jual,
         link_lokasi: editingWarung.link_lokasi
       })
       setEditingWarung(null)
@@ -172,11 +174,21 @@ export default function WarungList({ warungs: initialWarungs, distribusiId }: Pr
                   <span className="font-medium text-slate-700">{w.nama_penerima}</span>
                 </div>
 
-                {/* NIK */}
+                <div className="flex items-center gap-2 text-sm pl-9">
+                  <TabungIcon size={14} className="text-slate-400 flex-shrink-0" />
+                  <span className="text-slate-400 w-16 flex-shrink-0 text-xs">Tabung:</span>
+                  <span className="font-medium text-slate-700">
+                    {w.tabung_dimiliki !== null ? w.tabung_dimiliki : <span className="text-orange-500 italic text-xs">Belum Diatur</span>}
+                  </span>
+                </div>
+
+                {/* Harga Jual */}
                 <div className="flex items-center gap-2 text-sm pl-9">
                   <CreditCard className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span className="text-slate-400 w-16 flex-shrink-0">NIK:</span>
-                  <span className="font-mono font-medium text-slate-700">{w.nik}</span>
+                  <span className="text-slate-400 w-16 flex-shrink-0 text-xs">Harga Jual:</span>
+                  <span className="font-medium text-slate-700">
+                    {w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : <span className="text-orange-500 italic text-xs">Belum Diatur</span>}
+                  </span>
                 </div>
                 
                 {/* Link Lokasi */}
@@ -299,14 +311,33 @@ export default function WarungList({ warungs: initialWarungs, distribusiId }: Pr
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">NIK (16 Digit)</label>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Tabung Dimiliki</label>
                 <input
-                  type="text"
+                  type="number"
+                  inputMode="numeric"
                   required
-                  pattern="[0-9]{16}"
-                  value={editingWarung.nik}
-                  onChange={e => setEditingWarung({...editingWarung, nik: e.target.value})}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none transition-all text-sm font-mono"
+                  min="0"
+                  value={editingWarung.tabung_dimiliki || ''}
+                  onChange={e => setEditingWarung({...editingWarung, tabung_dimiliki: e.target.value ? parseInt(e.target.value) : null})}
+                  onKeyDown={(e) => {
+                    if (['e', 'E', '+', '-', ','].includes(e.key)) e.preventDefault()
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none transition-all text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Harga Jual</label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  required
+                  min="0"
+                  value={editingWarung.harga_jual || ''}
+                  onChange={e => setEditingWarung({...editingWarung, harga_jual: e.target.value ? parseInt(e.target.value) : 0})}
+                  onKeyDown={(e) => {
+                    if (['e', 'E', '+', '-', ','].includes(e.key)) e.preventDefault()
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none transition-all text-sm"
                 />
               </div>
               <div>
