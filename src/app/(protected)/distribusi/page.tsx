@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Store, Warehouse, Calendar, Search, MapPin, CreditCard, User, Filter } from 'lucide-react'
 import { TabungIcon } from '@/components/icons/TabungIcon'
+import DistribusiClient from './DistribusiClient'
 
 export const metadata: Metadata = {
   title: 'Distribusi',
@@ -143,76 +144,9 @@ export default async function DistribusiPage({
         )}
       </form>
 
-      {/* Grid Warung */}
+      {/* Client Logic: Search, Sort by Distance, and Grid */}
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((w) => (
-            <Link
-              key={w.warungId}
-              href={`/distribusi/${w.distribusiId}`}
-              id={`warung-card-${w.warungId}`}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-1 overflow-hidden group flex flex-col"
-            >
-              {/* Card header */}
-              <div className="px-4 pt-4 pb-3 flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform"
-                  style={{ background: '#dcfce7' }}
-                >
-                  <Store className="w-5 h-5" style={{ color: '#009345' }} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-slate-800 truncate leading-snug">
-                    {w.namaWarung}
-                  </h3>
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-400 mt-0.5">
-                    <Warehouse className="w-3 h-3" />
-                    <span className="truncate">{w.namaPangkalan}</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="mx-4 border-t border-slate-50" />
-
-              {/* Card body */}
-              <div className="px-4 py-3 space-y-2 flex-1">
-                <div className="flex items-center gap-2 text-xs text-slate-600">
-                  <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                  <span className="truncate">{w.namaPenerima}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <TabungIcon size={14} className="text-slate-400" />
-                  <span>Tabung: {w.tabung_dimiliki !== null ? w.tabung_dimiliki : <span className="text-orange-500 italic">Belum Diatur</span>}</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Harga: {w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : <span className="text-orange-500 italic">Belum Diatur</span>}</span>
-                </div>
-                {w.linkLokasi && (
-                  <div className="flex items-center gap-2 text-xs" style={{ color: '#009345' }}>
-                    <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Lokasi tersedia</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Card footer */}
-              <div className="px-4 py-2.5 border-t border-slate-50 flex items-center justify-between">
-                <div className="flex items-center gap-1 text-xs text-slate-400">
-                  <Calendar className="w-3 h-3" />
-                  {new Date(w.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                </div>
-                <span
-                  className="text-xs font-medium px-2 py-0.5 rounded-lg group-hover:opacity-80 transition-opacity"
-                  style={{ background: '#f0fdf4', color: '#009345' }}
-                >
-                  Lihat →
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <DistribusiClient initialWarungs={filtered} />
       ) : (
         <div className="rounded-2xl p-12 text-center shadow-sm" style={{ background: '#ffffff' }}>
           <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: '#dcfce7' }}>

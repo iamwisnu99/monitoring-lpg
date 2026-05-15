@@ -4,8 +4,10 @@ import { notFound } from 'next/navigation'
 import {
   ArrowLeft, Warehouse, Users, Plus, Truck, Calendar,
   MapPin, Phone, Pencil, Hash, ChevronLeft, ChevronRight, Store,
+  User, CreditCard,
 } from 'lucide-react'
 import DeletePangkalanButton from '@/components/DeletePangkalanButton'
+import { TabungIcon } from '@/components/icons/TabungIcon'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -44,17 +46,17 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
 
   const groupId = pangkalan.parent_id ? pangkalan.parent_id : pangkalan.id
 
-  // 2. Ambil data grup dan distribusi secara PARALEL (1 round-trip untuk keduanya)
-  const [groupRes, distResInitial] = await Promise.all([
+  // 2. Ambil data grup dan daftar warung secara PARALEL
+  const [groupRes, warungResInitial] = await Promise.all([
     supabase
       .from('pangkalan')
       .select('id, nama_pangkalan, penanggung_jawab')
       .or(`id.eq.${groupId},parent_id.eq.${groupId}`),
-    // Ambil distribusi untuk ID ini dulu sebagai fallback cepat
+    // Ambil daftar warung untuk ID pangkalan ini
     supabase
-      .from('distribusi')
-      .select('*, pangkalan(nama_pangkalan), warung_tujuan(id, nama_warung)', { count: 'exact' })
-      .eq('pangkalan_id', id)
+      .from('warung_tujuan')
+      .select('*, distribusi!inner(id, created_at, pangkalan_id)', { count: 'exact' })
+      .eq('distribusi.pangkalan_id', id)
       .order('created_at', { ascending: false })
       .range(offset, offset + PER_PAGE - 1)
   ])
@@ -62,26 +64,26 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
   const groupPangkalans = groupRes.data || []
   const groupIds = groupPangkalans.map(p => p.id)
   
-  // Jika ini bagian dari grup, kita ambil data distribusi untuk SELURUH GRUP
-  let distribusiList = distResInitial.data || []
-  let totalDistribusi = distResInitial.count ?? 0
+  let warungList = warungResInitial.data || []
+  let totalWarung = warungResInitial.count ?? 0
 
+  // Jika ini bagian dari grup, kita ambil data warung untuk SELURUH GRUP
   if (groupIds.length > 1) {
-    const { data: groupDist, count: groupCount } = await supabase
-      .from('distribusi')
-      .select('*, pangkalan(nama_pangkalan), warung_tujuan(id, nama_warung)', { count: 'exact' })
-      .in('pangkalan_id', groupIds)
+    const { data: groupWarungs, count: groupCount } = await supabase
+      .from('warung_tujuan')
+      .select('*, distribusi!inner(id, created_at, pangkalan_id)', { count: 'exact' })
+      .in('distribusi.pangkalan_id', groupIds)
       .order('created_at', { ascending: false })
       .range(offset, offset + PER_PAGE - 1)
     
-    if (groupDist) {
-      distribusiList = groupDist
-      totalDistribusi = groupCount ?? 0
+    if (groupWarungs) {
+      warungList = groupWarungs
+      totalWarung = groupCount ?? 0
     }
   }
 
   const subPangkalans = groupPangkalans.filter(p => p.id !== pangkalan.id)
-  const totalPages = Math.ceil(totalDistribusi / PER_PAGE)
+  const totalPages = Math.ceil(totalWarung / PER_PAGE)
 
   return (
     <div className="animate-fade-in space-y-5">
@@ -153,8 +155,8 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
                   <Truck className="w-4 h-4" style={{ color: '#d97706' }} />
                 </div>
                 <div>
-                  <p className="text-xs text-slate-400">Total Distribusi</p>
-                  <p className="text-2xl font-bold" style={{ color: '#009345' }}>{totalDistribusi}</p>
+                  <p className="text-xs text-slate-400">Total Warung</p>
+                  <p className="text-2xl font-bold" style={{ color: '#009345' }}>{totalWarung}</p>
                 </div>
               </div>
 
@@ -241,8 +243,8 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div>
-              <h2 className="font-semibold text-slate-800">Distribusi</h2>
-              <p className="text-xs text-slate-400 mt-0.5">{totalDistribusi} pengiriman tercatat</p>
+              <h2 className="font-semibold text-slate-800">Daftar Warung</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{totalWarung} warung tercatat</p>
             </div>
             <Link href={`/pangkalan/${id}/distribusi/tambah`}
               className="hidden lg:flex items-center gap-1.5 text-sm font-medium hover:underline"
@@ -252,46 +254,52 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
           </div>
 
           {/* List */}
-          {distribusiList && distribusiList.length > 0 ? (
+          {warungList && warungList.length > 0 ? (
             <>
               <div className="flex-1 divide-y divide-slate-50">
-                {distribusiList.map((d) => {
-                  const warungItems = (d.warung_tujuan as { id: string; nama_warung: string }[]) ?? []
+                {warungList.map((w) => {
+                  const dist = w.distribusi as any
                   return (
-                    <div key={d.id} className="px-5 py-4">
-                      {/* Tanggal + jumlah warung */}
+                    <div key={w.id} className="px-5 py-4">
+                      {/* Nama Warung + Link */}
                       <div className="flex items-center justify-between mb-2">
-                        <div className="flex flex-col gap-0.5">
+                        <Link
+                          href={`/distribusi/${dist?.id}`}
+                          className="flex items-center gap-2 group/title"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600 group-hover/title:bg-green-600 group-hover/title:text-white transition-all">
+                            <Store className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-slate-700 group-hover/title:text-green-700 transition-colors">{w.nama_warung}</p>
+                            <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <User className="w-3 h-3" /> {w.nama_penerima}
+                            </p>
+                          </div>
+                        </Link>
+                        <div className="text-right">
                           <div className="flex items-center gap-1.5 text-xs text-slate-400">
                             <Calendar className="w-3 h-3" />
-                            {new Date(d.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {dist?.created_at ? new Date(dist.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                           </div>
-                          {(d.pangkalan as any)?.nama_pangkalan && (d.pangkalan as any).nama_pangkalan !== pangkalan.nama_pangkalan && (
-                            <span className="text-[10px] text-slate-400 font-medium">via {(d.pangkalan as any).nama_pangkalan}</span>
-                          )}
+                          <span className="text-[10px] font-medium text-slate-400">Terdaftar</span>
                         </div>
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#dcfce7', color: '#009345' }}>
-                          {warungItems.length} warung
-                        </span>
                       </div>
 
-                      {/* Daftar nama warung */}
-                      <div className="flex flex-wrap gap-1.5">
-                        {warungItems.length > 0 ? warungItems.map((w) => (
-                          <Link
-                            key={w.id}
-                            href={`/distribusi/${d.id}`}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all hover:opacity-80"
-                            style={{ background: '#f0fdf4', color: '#007a38', border: '1px solid #bbf7d0' }}
-                          >
-                            <Store className="w-3 h-3" />
-                            {w.nama_warung}
-                          </Link>
-                        )) : (
-                          <Link href={`/distribusi/${d.id}`}
-                            className="text-xs text-slate-400 hover:text-slate-600 transition-colors">
-                            Lihat detail →
-                          </Link>
+                      {/* Info Tambahan */}
+                      <div className="flex items-center gap-3 pl-10">
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{w.harga_jual ? `Rp ${w.harga_jual.toLocaleString('id-ID')}` : 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <TabungIcon size={14} className="text-slate-400" />
+                          <span>{w.tabung_dimiliki || 0} Tabung</span>
+                        </div>
+                        {w.link_lokasi && (
+                          <a href={w.link_lokasi} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[11px] text-green-600 hover:underline">
+                            <MapPin className="w-3 h-3" /> Lokasi
+                          </a>
                         )}
                       </div>
                     </div>
@@ -332,12 +340,12 @@ export default async function DetailPangkalanPage({ params, searchParams }: Prop
             </>
           ) : (
             <div className="py-16 text-center">
-              <Truck className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-              <p className="text-slate-400 text-sm mb-4">Belum ada data distribusi</p>
+              <Store className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-slate-400 text-sm mb-4">Belum ada data warung</p>
               <Link href={`/pangkalan/${id}/distribusi/tambah`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
                 style={{ background: 'linear-gradient(135deg, #009345, #00b356)' }}>
-                <Plus className="w-4 h-4" /> Tambah Distribusi
+                <Plus className="w-4 h-4" /> Tambah Warung
               </Link>
             </div>
           )}
