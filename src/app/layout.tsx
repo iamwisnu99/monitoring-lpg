@@ -106,7 +106,7 @@ export const metadata: Metadata = {
 
   // ── PWA / Browser Color ────────────────────────────────────────────────
   other: {
-    "msapplication-TileColor": "#1e40af",
+    "msapplication-TileColor": "#ffffff",
     "msapplication-config": "/browserconfig.xml",
   },
 
@@ -119,8 +119,8 @@ export const metadata: Metadata = {
 // Viewport terpisah dari metadata (Next.js 14+)
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#009345" },
-    { media: "(prefers-color-scheme: dark)", color: "#007a38" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#ffffff" },
   ],
   width: "device-width",
   initialScale: 1,
