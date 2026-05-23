@@ -1,9 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { MapPin, Layers, Loader2 } from 'lucide-react'
-import { TabungIcon } from './icons/TabungIcon'
 import CustomSelect, { type SelectOption } from './CustomSelect'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -225,43 +223,25 @@ export default function DashboardMap({ warungs, pangkalanList }: Props) {
 
     setIsResolving(true)
 
-    // Buat icon dari TabungIcon
-    const tabungSvgHtml = renderToStaticMarkup(<TabungIcon size={40} className="block" />)
-    const tabungIcon = L.divIcon({
-      html: `<div style="display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 4px 10px rgba(0,0,0,0.45));cursor:pointer;">
-        <div style="color:#B0D14B;width:40px;height:40px">${tabungSvgHtml}</div>
-        <div style="width:2px;height:8px;background:#3a6b08;margin-top:-2px;border-radius:0 0 2px 2px;"></div>
-      </div>`,
-      className: '',
-      iconSize: [40, 50],
-      iconAnchor: [20, 50],
-      popupAnchor: [0, -52],
+    // ── Resolve koordinat async ───────────────────────────────────────────────
+    const resolved: { w: typeof filteredWarungs[0]; coords: { lat: number; lng: number } | null }[] = []
+    for (const w of withLocation) {
+      if (buildVersionRef.current !== myVersion) return // batalkan jika ada render baru
+      const coords = await resolveCoords(w.link_lokasi!)
+      resolved.push({ w, coords })
+    }
+
+    // ── Icon dari file SVG statis ─────────────────────────────────────
+    // Langsung pakai file ic_tabung.svg di /public/icons — ringan, tanpa shadow
+    const tabungIcon = L.icon({
+      iconUrl: '/icons/ic_tabung.svg',
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+      popupAnchor: [0, -38],
     })
-
-    // Resolve semua koordinat — prioritaskan yang sudah ada di cache (tidak panggil API)
-    const resolved = await Promise.all(
-      withLocation.map(async (w) => {
-        const coords = await resolveCoords(w.link_lokasi)
-        return { w, coords }
-      })
-    )
-
-    // Batalkan jika versi sudah ketinggalan (filter berubah saat sedang resolve)
-    if (myVersion !== buildVersionRef.current) {
-      isRunningRef.current = false
-      return
-    }
-
-    if (!markersLayerRef.current || !leafletMapRef.current) {
-      setIsResolving(false)
-      isRunningRef.current = false
-      return
-    }
 
     const bounds: [number, number][] = []
     let count = 0
-
-    const popupIconHtml = renderToStaticMarkup(<TabungIcon size={20} />)
 
     for (const { w, coords } of resolved) {
       if (!coords) continue
@@ -277,8 +257,8 @@ export default function DashboardMap({ warungs, pangkalanList }: Props) {
       marker.bindPopup(`
         <div style="font-family:system-ui,-apple-system,sans-serif;min-width:210px;max-width:250px;padding:2px 0 4px">
           <div style="display:flex;align-items:center;gap:8px;border-bottom:1px solid #f1f5f9;padding-bottom:8px;margin-bottom:10px">
-            <div style="width:36px;height:36px;border-radius:10px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#B0D14B">
-              ${popupIconHtml}
+            <div style="width:36px;height:36px;border-radius:10px;background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <img src="/icons/ic_tabung.svg" width="20" height="20" alt="tabung" />
             </div>
             <div style="flex:1;min-width:0">
               <p style="margin:0;font-weight:700;font-size:13px;color:#1e293b;line-height:1.35;word-break:break-word">${w.nama_warung}</p>
