@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { Store, Warehouse, Calendar, MapPin, CreditCard, User, Navigation2, AlertTriangle, Loader2, RefreshCw } from 'lucide-react'
+import { Store, Warehouse, Calendar, MapPin, CreditCard, User, Navigation2, Loader2, RefreshCw } from 'lucide-react'
 import { TabungIcon } from '@/components/icons/TabungIcon'
-import { calculateDistance, extractCoordsFromUrl, isMockLocation } from '@/lib/location-utils'
+import { calculateDistance, extractCoordsFromUrl } from '@/lib/location-utils'
 
 interface WarungCard {
   warungId: string
@@ -57,7 +57,6 @@ export default function DistribusiClient({ initialWarungs }: Props) {
   const [sort, setSort] = useState<SortOption>('latest')
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [geoStatus, setGeoStatus] = useState<'prompt' | 'granted' | 'denied' | 'checking'>('checking')
-  const [isFake, setIsFake] = useState(false)
   const [isLocating, setIsLocating] = useState(false)
 
   // Map: originalUrl → resolvedUrl (full URL dengan koordinat)
@@ -145,20 +144,11 @@ export default function DistribusiClient({ initialWarungs }: Props) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setIsLocating(false)
-
-        if (isMockLocation(position)) {
-          setIsFake(true)
-          setUserCoords(null)
-          return
-        }
-
-        setIsFake(false)
         setUserCoords({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         })
         setGeoStatus('granted')
-
         if (pendingSort) setSort(pendingSort)
       },
       (error) => {
@@ -195,19 +185,6 @@ export default function DistribusiClient({ initialWarungs }: Props) {
 
   return (
     <div className="space-y-6">
-      {/* Fake Location Warning */}
-      {isFake && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-4 animate-shake">
-          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-600" />
-          </div>
-          <div>
-            <h3 className="font-bold text-red-800">Lokasi Palsu Terdeteksi!</h3>
-            <p className="text-sm text-red-600">Anda terdeteksi sedang menggunakan lokasi palsu.</p>
-          </div>
-        </div>
-      )}
-
       {/* Sort Control */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50/50 border border-slate-100">
         <div className="flex items-center gap-2">
