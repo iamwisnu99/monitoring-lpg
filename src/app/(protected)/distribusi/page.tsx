@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { Store, Warehouse, Calendar, Search, MapPin, CreditCard, User, Filter } from 'lucide-react'
+import { Store, Warehouse, Calendar, MapPin, CreditCard, User } from 'lucide-react'
 import { TabungIcon } from '@/components/icons/TabungIcon'
 import DistribusiClient from './DistribusiClient'
+import DistribusiFilterClient from './DistribusiFilterClient'
 
 export const metadata: Metadata = {
   title: 'Distribusi',
@@ -95,54 +95,12 @@ export default async function DistribusiPage({
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <form method="get" className="flex flex-col sm:flex-row gap-3">
-        {/* Search by nama warung */}
-        <div className="relative flex-1 min-w-0">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <input
-            id="search-warung"
-            name="q"
-            type="text"
-            defaultValue={search}
-            placeholder="Cari nama warung..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-slate-800 text-sm outline-none transition-all bg-white focus:border-green-600 focus:ring-2 focus:ring-green-100"
-          />
-        </div>
-
-        {/* Filter Pangkalan */}
-        <div className="relative sm:w-56">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-          <select
-            id="filter-pangkalan"
-            name="pangkalan_id"
-            defaultValue={pangkalanFilter ?? ''}
-            className="w-full pl-10 pr-8 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm outline-none transition-all bg-white appearance-none cursor-pointer"
-          >
-            <option value="">Semua Pangkalan</option>
-            {pangkalanList?.map((p) => (
-              <option key={p.id} value={p.id}>{p.nama_pangkalan}</option>
-            ))}
-          </select>
-        </div>
-
-        <button
-          type="submit"
-          className="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:opacity-90 active:scale-[0.98] flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #007a38, #009345)' }}
-        >
-          Terapkan
-        </button>
-
-        {(search || pangkalanFilter) && (
-          <Link
-            href="/distribusi"
-            className="px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0 text-center"
-          >
-            Reset
-          </Link>
-        )}
-      </form>
+      {/* Filter Bar — modern custom dropdown */}
+      <DistribusiFilterClient
+        pangkalanList={pangkalanList ?? []}
+        defaultSearch={search}
+        defaultPangkalanId={pangkalanFilter}
+      />
 
       {/* Client Logic: Search, Sort by Distance, and Grid */}
       {filtered.length > 0 ? (

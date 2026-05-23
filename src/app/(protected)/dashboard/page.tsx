@@ -16,13 +16,15 @@ import {
   BarChart3,
   Calendar,
 } from 'lucide-react'
+import type { RawWarungForMap } from '@/components/DashboardMap'
+import DashboardMapWrapper from '@/components/DashboardMapWrapper'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch stats and recent distribusi in parallel
-  const [statsResults, recentResult] = await Promise.all([
+  // ── Fetch stats, recent distribusi, dan pangkalan secara paralel ────────────
+  const [statsResults, recentResult, pangkalanResult] = await Promise.all([
     Promise.all([
       supabase.from('pangkalan').select('*', { count: 'exact', head: true }).eq('user_id', user!.id),
       supabase.from('distribusi').select('*, pangkalan!inner(user_id)', { count: 'exact', head: true }).eq('pangkalan.user_id', user!.id),
@@ -33,11 +35,63 @@ export default async function DashboardPage() {
       .select('*, pangkalan(nama_pangkalan, user_id)')
       .eq('pangkalan.user_id', user!.id)
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(5),
+    supabase
+      .from('pangkalan')
+      .select('id, nama_pangkalan')
+      .eq('user_id', user!.id)
+      .order('nama_pangkalan', { ascending: true }),
   ])
 
   const [{ count: totalPangkalan }, { count: totalDistribusi }, { count: totalWarung }] = statsResults
   const recentDistribusi = recentResult.data
+  const pangkalanList = (pangkalanResult.data ?? []).map((p: any) => ({ id: p.id, nama: p.nama_pangkalan }))
+  const userPangkalanIds = pangkalanList.map(p => p.id)
+
+  // ── Fetch warung untuk peta (2 langkah agar filter user terjamin) ───────────
+  // Langkah 1: ambil distribusi milik user
+  const { data: distribusiData } = userPangkalanIds.length > 0
+    ? await supabase
+        .from('distribusi')
+        .select('id, pangkalan_id')
+        .in('pangkalan_id', userPangkalanIds)
+    : { data: [] }
+
+  const distribusiIds = (distribusiData ?? []).map((d: any) => d.id)
+  const distribusiPangkalanMap: Record<string, string> = {}
+  for (const d of distribusiData ?? []) {
+    distribusiPangkalanMap[(d as any).id] = (d as any).pangkalan_id
+  }
+  const pangkalanNameMap: Record<string, string> = {}
+  for (const p of pangkalanResult.data ?? []) {
+    pangkalanNameMap[(p as any).id] = (p as any).nama_pangkalan
+  }
+
+  // Langkah 2: ambil semua warung yang memiliki link_lokasi untuk distribusi tersebut
+  const rawWarungs: RawWarungForMap[] = []
+  if (distribusiIds.length > 0) {
+    const { data: warungData } = await supabase
+      .from('warung_tujuan')
+      .select('id, nama_warung, tabung_dimiliki, harga_jual, link_lokasi, distribusi_id')
+      .in('distribusi_id', distribusiIds)
+      .not('link_lokasi', 'is', null)
+      .neq('link_lokasi', '')
+
+    for (const w of (warungData ?? []) as any[]) {
+      const pangkalanId = distribusiPangkalanMap[w.distribusi_id]
+      const namaPangkalan = pangkalanNameMap[pangkalanId]
+      if (!pangkalanId || !namaPangkalan) continue
+      rawWarungs.push({
+        id: w.id,
+        nama_warung: w.nama_warung,
+        tabung_dimiliki: w.tabung_dimiliki,
+        harga_jual: w.harga_jual,
+        link_lokasi: w.link_lokasi,
+        pangkalan_id: pangkalanId,
+        nama_pangkalan: namaPangkalan,
+      })
+    }
+  }
 
   const namaAgen = user?.user_metadata?.nama_agen as string | undefined
 
@@ -150,6 +204,9 @@ export default async function DashboardPage() {
           <ArrowRight className="w-5 h-5 text-white/60" />
         </Link>
       </div>
+
+      {/* Map */}
+      <DashboardMapWrapper warungs={rawWarungs} pangkalanList={pangkalanList} />
 
       {/* Recent Distribusi */}
       <div className="rounded-2xl shadow-sm overflow-hidden" style={{ background: '#ffffff' }}>
