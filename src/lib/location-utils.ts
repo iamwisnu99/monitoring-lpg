@@ -96,19 +96,13 @@ export function isMockLocation(position: GeolocationPosition): boolean {
   if (coords.accuracy === 0) return true
 
   // ── Lapisan 4: Timestamp beku (Chrome DevTools & banyak ekstensi) ────────
-  // getCurrentPosition yang legit selalu menghasilkan timestamp ~= Date.now()
-  // DevTools / ekstensi sering mengembalikan timestamp yang sudah usang (> 30 detik)
+  // Beberapa HP lambat memberikan GPS fix, beri toleransi 60 detik
   const ageMs = Date.now() - position.timestamp
-  if (ageMs > 30_000) return true   // timestamp lebih dari 30 detik yang lalu
+  if (ageMs > 60_000) return true   // timestamp lebih dari 60 detik yang lalu
 
-  // ── Lapisan 5: Altitude anomali ──────────────────────────────────────────
-  // GPS nyata hampir selalu menyertakan altitude (meski tidak akurat).
-  // Banyak spoofer mengisi null atau angka bulat sempurna tanpa noise.
-  if (coords.altitude !== null && coords.altitude !== undefined) {
-    const alt = coords.altitude as number
-    // Altitude yang persis bulat (0, 100, 200, …) tanpa desimal sangat mencurigakan
-    if (Number.isInteger(alt) && Math.abs(alt) > 0 && alt % 10 === 0) return true
-  }
+  // ── Lapisan 5 (DIHAPUS) ────────────────────────────────────────────────────
+  // Pemeriksaan altitude integer dihapus karena terlalu banyak false positive:
+  // banyak HP Android mengembalikan altitude bulat (10, 20, 50 m) saat GPS baru fix.
 
   // ── Lapisan 6: Kecepatan tidak mungkin (teleportasi) ────────────────────
   // Manusia tidak bisa berpindah > 500 km/h tanpa naik pesawat
